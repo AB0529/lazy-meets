@@ -28,16 +28,6 @@ SCHEDULE = [
                 #     "url": "",
                 #     "join_time": "8:43"
                 # },
-                # {
-                #     "name": "Period 3",
-                #     "url": "",
-                #     "join_time": "11:16"
-                # },
-                # {
-                #     "name": "Period 6",
-                #     "url": "",
-                #     "join_time": "12:36"
-                # }
             ]
     },
     # Tuesday and thursday classes
@@ -49,11 +39,6 @@ SCHEDULE = [
     #             "url": "URL HERE",
     #             "join_time": "8:43"
     #         },
-    #         {
-    #             "name": "Period 5",
-    #             "url": "URL",
-    #             "join_time": "11:16"
-    #         }
     #     ]
     # },
 ]
