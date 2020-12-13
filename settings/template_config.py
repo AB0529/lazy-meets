@@ -21,7 +21,7 @@ SCHEDULE = [
                 {
                 "name": "Period 1",
                 "url": "",
-                "join_time": "7:23"
+                "join_time": "7:23" # !!! THIS IS IN 24-hour TIME FORMAT !!!
                 },
                 # {
                 #     "name": "Period 2",
