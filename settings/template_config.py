@@ -10,6 +10,9 @@ LEAVE_THRESHOLD = 10
 # ----------------------------------------------------------
 
 # The shedule for the week
+# I recommend you join the class 3 minutes late
+# So you avoid awkward moments when it's only you
+# and the teacher in the call :)
 SCHEDULE = [
     # Monday and wednesday classes
     {
