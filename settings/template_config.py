@@ -1,4 +1,4 @@
-# Will leave the call when this number or below of people are left in the call
+# Will leave the call when below this number of people are left in the call
 LEAVE_THRESHOLD = 10
 
 # Too lazy to add, will do it later, ignore this
