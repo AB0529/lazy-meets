@@ -17,10 +17,13 @@ To change this threshold and edit other details, look in `settings/template_conf
 
 # Installation
 
+## Install dependencies via pip
 ```sh
 pip3 install termcolor selenium
 ```
-
+## Setup config
+* Rename `template_config.py` in the `settings` folder to `config.py`
+* Open the file and edit it to your schedule and account detail needs
 # Usage
 
 ```sh
