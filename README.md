@@ -2,7 +2,7 @@
 
 Are you so lazy you can't even go to online classes? Well fret no more!
 
-This uses Selenium with Firefox to automate loggin in and going to your online classes on a fixed schedule.
+This uses Selenium with Firefox to automate login and going to your online classes on a fixed schedule.
 
 You can leave this running in the background forever and it will automaticlly start a Firefox instance and join a class when the time is right.
 
@@ -13,7 +13,7 @@ To change this threshold and edit other details, look in `settings/template_conf
 # Requirements
 
 * Python 3 or higher
-* Selenium with Gecko Driver ([Install Guide](https://selenium-python.readthedocs.io/installation.html))
+* Selenium with Firefox Driver ([Install Guide](https://selenium-python.readthedocs.io/installation.html))
 
 # Installation
 
