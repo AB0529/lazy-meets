@@ -1,4 +1,4 @@
-# Will leave the call when this number or below of people are left in the call
+# Will leave the call when below this number of people are left in the call
 LEAVE_THRESHOLD = 10
 # The window of time to join a class even if the join time has passed
 # For example, if it was 5, it will join a class if the current time is 7:28 and the join time is 7:23
