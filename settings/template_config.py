@@ -1,11 +1,14 @@
 # Will leave the call when this number or below of people are left in the call
 LEAVE_THRESHOLD = 10
+# The window of time to join a class even if the join time has passed
+# For example, if it was 5, it will join a class if the current time is 7:28 and the join time is 7:23
+SKIP_THRESHOLD = 5 # Minutes
 
 # Too lazy to add, will do it later, ignore this
 # ----------------------------------------------------------
 # Minutes to wait if failed to join class
 # RETRY_INTERVAL = 1
-# How many times to retry joining until quitting
+# How many times to retry joining until giving up
 # RETRY_THRESHOLD = 3
 # ----------------------------------------------------------
 

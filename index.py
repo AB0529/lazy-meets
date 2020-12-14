@@ -1,6 +1,7 @@
 import calendar
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
+from threading import Thread
 
 from pynput.keyboard import Controller
 from selenium import webdriver
@@ -52,7 +53,7 @@ def join_class(name, url):
     time.sleep(10)
     # Join button
     browser.find_element_by_xpath(
-        "//span[contains(lower-case(text()), 'join')]"
+        "//span[contains(text(), 'Join')]"
     ).click()
     time.sleep(10)
 
@@ -82,6 +83,13 @@ def join_class(name, url):
     browser.quit()
 
 
+# Checks if time is in a range
+def time_in_range(start, end, now):
+    if start < end:
+        return now >= start and now <= end
+    else:
+        return now >= start or now <= end
+
 # Main function
 def main(now):
     # Gets the current class based on the weekday
@@ -100,16 +108,21 @@ def main(now):
     # Check the time for each class with current time
     for c in classes:
         # Time to join class
-        jt = c.get("join_time")
+        jt = datetime.strptime(
+            f'{now.year}-{now.month}-{now.day} {c.get("join_time")}', 
+            "%Y-%m-%d %H:%M").replace(second=0, microsecond=0)
 
         # If matches with current time, join class
-        if f"{now.hour}:{now.minute}" == jt:
-            join_class(c.get("name"), c.get("url"))
+        if  time_in_range(jt, jt + timedelta(minutes=config.SKIP_THRESHOLD), now):
+            class_thread = Thread(target=join_class(c.get("name"), c.get("url")))
+            # Don't join a class if already in a class
+            if class_thread.is_alive():
+                return
 
 
 # Main loop
 while True:
-    now = datetime.now()
+    now = datetime.now().replace(second=0, microsecond=0)
     main(now)
 
     # Wait 1 min before checking again
