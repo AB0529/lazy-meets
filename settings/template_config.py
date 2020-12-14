@@ -2,7 +2,7 @@
 LEAVE_THRESHOLD = 10
 # The window of time to join a class even if the join time has passed
 # For example, if it was 5, it will join a class if the current time is 7:28 and the join time is 7:23
-SKIP_THRESHOLD = 5 # Minutes
+SKIP_THRESHOLD = 5  # Minutes
 
 # Too lazy to add, will do it later, ignore this
 # ----------------------------------------------------------
@@ -21,17 +21,17 @@ SCHEDULE = [
     {
         "weekday": ["monday", "wednesday"],
         "classes": [
-                {
+            {
                 "name": "Period 1",
                 "url": "",
-                "join_time": "7:23" # !!! THIS IS IN 24-hour TIME FORMAT !!!
-                },
-                # {
-                #     "name": "Period 2",
-                #     "url": "",
-                #     "join_time": "8:43"
-                # },
-            ]
+                "join_time": "7:23"  # !!! THIS IS IN 24-hour TIME FORMAT !!!
+            },
+            # {
+            #     "name": "Period 2",
+            #     "url": "",
+            #     "join_time": "8:43"
+            # },
+        ]
     },
     # Tuesday and thursday classes
     # {

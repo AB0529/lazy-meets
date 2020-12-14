@@ -31,7 +31,8 @@ def join_class(name, url):
     # Browser
     browser = webdriver.Firefox(options=options)
     browser.set_window_size(512, 512)
-    browser.get("https://accounts.google.com/ServiceLogin?service=mail&continue=https://mail.google.com/mail/#identifier")
+    browser.get(
+        "https://accounts.google.com/ServiceLogin?service=mail&continue=https://mail.google.com/mail/#identifier")
 
     # Fill in email
     email = browser.find_element_by_id("identifierId")
@@ -90,6 +91,7 @@ def time_in_range(start, end, now):
     else:
         return now >= start or now <= end
 
+
 # Main function
 def main(now):
     # Gets the current class based on the weekday
@@ -109,12 +111,13 @@ def main(now):
     for c in classes:
         # Time to join class
         jt = datetime.strptime(
-            f'{now.year}-{now.month}-{now.day} {c.get("join_time")}', 
+            f'{now.year}-{now.month}-{now.day} {c.get("join_time")}',
             "%Y-%m-%d %H:%M").replace(second=0, microsecond=0)
 
         # If matches with current time, join class
-        if  time_in_range(jt, jt + timedelta(minutes=config.SKIP_THRESHOLD), now):
-            class_thread = Thread(target=join_class(c.get("name"), c.get("url")))
+        if time_in_range(jt, jt + timedelta(minutes=config.SKIP_THRESHOLD), now):
+            class_thread = Thread(target=join_class(
+                c.get("name"), c.get("url")))
             # Don't join a class if already in a class
             if class_thread.is_alive():
                 return
