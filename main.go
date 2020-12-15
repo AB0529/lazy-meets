@@ -88,6 +88,14 @@ func InitialPrompt() {
 	IniitalQuesitons()
 }
 
+// ElementIsLocated returns a condition that checks if the element is found on page
+func ElementIsLocated(by, selector string) selenium.Condition {
+	return func(wd selenium.WebDriver) (bool, error) {
+		_, err := wd.FindElement(by, selector)
+		return err == nil, nil
+	}
+}
+
 // StartMeet will start the Google Meet
 func StartMeet(class Class, config Config) {
 	Info("Joining " + Yellow(class.Name))
@@ -151,9 +159,13 @@ func StartMeet(class Class, config Config) {
 	wd.Get(class.URI.String())
 	time.Sleep(5 * time.Second)
 	// Find Join button
-	btn, _ = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Join')]")
+	btn, err = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Join')]")
+	if err != nil {
+		btn, _ = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Ask')]")
+	}
 	btn.Click()
-	time.Sleep(5 * time.Second)
+	// Wait until class has been entered
+	wd.WaitWithTimeout(ElementIsLocated(selenium.ByID, "wnPUne N0PJ8e"), time.Second*10)
 
 	// Number of people in the call
 	prevNum := 0
@@ -161,6 +173,8 @@ func StartMeet(class Class, config Config) {
 
 	wg.Add(2)
 	go func() {
+		defer wg.Done()
+
 		for {
 			// Number of people in call
 			numElem, _ := wd.FindElement(selenium.ByXPATH, "//span[@class='wnPUne N0PJ8e']")
@@ -172,9 +186,8 @@ func StartMeet(class Class, config Config) {
 				numStr, _ = numElem.Text()
 			}
 
-			// Convert to number
+			// Convert to int
 			num, _ := strconv.Atoi(numReg.FindString(numStr))
-			fmt.Println(num)
 
 			if num != prevNum {
 				Info("There are " + Yellow(num) + " people in the call")
@@ -182,13 +195,13 @@ func StartMeet(class Class, config Config) {
 			}
 			if num < config.Leave {
 				Info("Leaving class " + Yellow(class.Name))
+				wd.Quit()
 				break
 			}
 
-			// Check every 10 seconds
+			// Check every 5 seconds
 			time.Sleep(time.Second * 5)
 		}
-		defer wg.Done()
 	}()
 
 	wg.Wait()
@@ -204,8 +217,8 @@ func CheckSchedule(now time.Time, config Config, schedule Schedule) bool {
 	// Make sure there's a calss for the weekday and the time is right
 	for _, class := range schedule.Classes {
 		for _, wd := range class.Weekdays {
-			if weekday == wd {
-				break
+			if weekday != wd {
+				continue
 			}
 		}
 
@@ -237,17 +250,12 @@ func StartProgram() {
 	Info("Program started, will spring into action when class is ready!")
 
 	// Main loop
-	wg.Add(3)
-	go func() {
-		defer wg.Done()
-		for {
-			now := time.Now()
-			CheckSchedule(now, config, schedule)
-			// Wait 30 seconds
-			time.Sleep(30 * time.Second)
-		}
-	}()
-	wg.Wait()
+	for {
+		now := time.Now()
+		CheckSchedule(now, config, schedule)
+		// Wait 30 seconds
+		time.Sleep(30 * time.Second)
+	}
 }
 
 func main() {
