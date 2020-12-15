@@ -240,8 +240,8 @@ func StartProgram() {
 	for {
 		now := time.Now()
 		CheckSchedule(now, config, schedule)
-		// Wait a minute
-		time.Sleep(5 * time.Second)
+		// Wait 30 seconds
+		time.Sleep(30 * time.Second)
 	}
 }
 
