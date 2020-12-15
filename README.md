@@ -21,10 +21,19 @@ go get github.com/tebeka/selenium
 go get gopkg.in/yaml.v2 
 ```
 # Usage
-This will generate an exectuable for you to run.
+Just run the exectuable you need
+
+For Windows Users
+-
+Just Run the `lazy-meets.exe` file
+
+For Linux Users
+- 
 ```sh
-go build
-```
+chmod +x lazy-meets
+./lazy-meets
+``` 
+
 Or if you prefer running the files directly
 ```sh
 go run main.go prompts.go
