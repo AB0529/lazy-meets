@@ -62,17 +62,17 @@ def join_class(name, url):
     # TODO: This is ugly make it better
     num = int(
         browser.find_element_by_xpath(
-            "//span[@class='NPEfkd RveJvd snByac']"
+            "//span[@class='wnPUne N0PJ8e']"
         ).text
     )
     print(
-        f"[{colored('INFO', 'blue')}] - Found {colored('yellow', num)} people in the class"
+        f"[{colored('INFO', 'blue')}] - Found {colored(num, 'yellow')} people in the class"
     )
 
     while True:
         num = int(
             browser.find_element_by_xpath(
-                "//span[@class='NPEfkd RveJvd snByac']"
+                "//span[@class='wnPUne N0PJ8e']"
             ).text
         )
         if num < config.LEAVE_THRESHOLD:
