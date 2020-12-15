@@ -234,6 +234,8 @@ func StartProgram() {
 	file, _ = ioutil.ReadFile(Basepath + "/schedule.yml")
 	yaml.Unmarshal(file, &schedule)
 
+	Info("Program started, will spring into action when class is ready!")
+
 	// Main loop
 	for {
 		now := time.Now()
