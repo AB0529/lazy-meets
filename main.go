@@ -237,12 +237,17 @@ func StartProgram() {
 	Info("Program started, will spring into action when class is ready!")
 
 	// Main loop
-	for {
-		now := time.Now()
-		CheckSchedule(now, config, schedule)
-		// Wait 30 seconds
-		time.Sleep(30 * time.Second)
-	}
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		for {
+			now := time.Now()
+			CheckSchedule(now, config, schedule)
+			// Wait 30 seconds
+			time.Sleep(30 * time.Second)
+		}
+	}()
+	wg.Wait()
 }
 
 func main() {
