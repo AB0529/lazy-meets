@@ -27,11 +27,16 @@ For Windows Users
 -
 Just Run the `lazy-meets.exe` file
 
-For Linux Users
+For Linux and MacOS Users
 - 
 ```sh
-chmod +x lazy-meets
-./lazy-meets
+chmod +x lazy-meets-linux
+./lazy-meets-linux
+``` 
+or
+```sh
+chmod +x lazy-meets-macos
+./lazy-meets-macos
 ``` 
 
 Or if you prefer running the files directly
