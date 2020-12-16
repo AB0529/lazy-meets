@@ -27,7 +27,7 @@ var (
 func GetBasePath() string {
 	cmdOut, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 	if err != nil {
-		fmt.Errorf(fmt.Sprintf(`Error on getting the go-kit base path: %s - %s`, err.Error(), string(cmdOut)))
+		fmt.Printf(fmt.Sprintf(`Error on getting the go-kit base path: %s - %s`, err.Error(), string(cmdOut)))
 		os.Exit(1)
 	}
 	return strings.TrimSpace(string(cmdOut))
