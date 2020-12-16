@@ -104,7 +104,7 @@ func IniitalQuesitons() {
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	// Get the schedule
-	file, _ := ioutil.ReadFile(Basepath + "/schedule.yml")
+	file, _ := ioutil.ReadFile(GetBasePath() + "/schedule.yml")
 	yaml.Unmarshal(file, &schedule)
 
 	for _, q := range questions {
@@ -170,7 +170,7 @@ func IniitalQuesitons() {
 
 			// Delete file if no classes are present
 			if len(schedule.Classes) <= 0 {
-				os.Remove(Basepath + "/schedule.yml")
+				os.Remove(GetBasePath() + "/schedule.yml")
 				break
 			}
 

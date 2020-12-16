@@ -21,7 +21,7 @@ var (
 	geckoWindows = "https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-win64.zip"
 
 	// Vendors path to the Vendors dir
-	Vendors = Basepath + "/Vendors"
+	Vendors = GetBasePath() + "/Vendors"
 	// Geckodriver Path to Geckodrivers
 	Geckodriver = ""
 	// Firefox Path to Firefox

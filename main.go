@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
+	"os/exec"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -20,10 +20,18 @@ import (
 
 var (
 	_, b, _, _ = runtime.Caller(0)
-	// Basepath the root directory
-	Basepath = filepath.Dir(b)
-	wg       sync.WaitGroup
+	wg         sync.WaitGroup
 )
+
+// GetBasePath gets the Basepath
+func GetBasePath() string {
+	cmdOut, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		fmt.Errorf(fmt.Sprintf(`Error on getting the go-kit base path: %s - %s`, err.Error(), string(cmdOut)))
+		os.Exit(1)
+	}
+	return strings.TrimSpace(string(cmdOut))
+}
 
 // NewConfig will ask for promtps for the config
 func NewConfig() Config {
@@ -62,7 +70,7 @@ func NewSchedule() Schedule {
 // NewConfigFile will create a new configuration file
 func NewConfigFile() {
 	// Make sure config file exists, if not create it
-	_, err := os.Stat(Basepath + "/config.yml")
+	_, err := os.Stat(GetBasePath() + "/config.yml")
 	if err != nil {
 		Info("No config found, creating new config...")
 		cfg := NewConfig()
@@ -74,7 +82,7 @@ func NewConfigFile() {
 // NewScheduleFile will create a new schedule file
 func NewScheduleFile() {
 	// Make sure schedule file exists, if not create it
-	_, err := os.Stat(Basepath + "/schedule.yml")
+	_, err := os.Stat(GetBasePath() + "/schedule.yml")
 	if err != nil {
 		Info("No schedule found, creating new schedule...")
 		schedule := NewSchedule()
@@ -241,9 +249,9 @@ func StartProgram() {
 	var config Config
 	var schedule Schedule
 
-	file, _ := ioutil.ReadFile(Basepath + "/config.yml")
+	file, _ := ioutil.ReadFile(GetBasePath() + "/config.yml")
 	yaml.Unmarshal(file, &config)
-	file, _ = ioutil.ReadFile(Basepath + "/schedule.yml")
+	file, _ = ioutil.ReadFile(GetBasePath() + "/schedule.yml")
 	yaml.Unmarshal(file, &schedule)
 
 	Info("Program started, will spring into action when class is ready!")
