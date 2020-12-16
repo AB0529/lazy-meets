@@ -9,11 +9,11 @@ You can leave this running in the background forever and it will automaticlly st
 For leaving a class, it will check for a threshold of users are left, once the amount of users are below this threshold, it will leave the meet by quitting the browser.
 
 # Table of Contents
-- [Releases](https://github.com/AB0529/lazy-meets/releases/)
-- [Usage](#Usage)
+1. [Releases](https://github.com/AB0529/lazy-meets/releases/)
+1. [Usage](#Usage)
     - [Windows](#Windows)
     - [Mac/Linux](#Mac/Linux)
-- [Build](#build-from-source)
+1. [Build](#build-from-source)
     - [Requirements](#Requirements)
     - [Dependencies](#Dependencies)
     - [Running](#Running)
