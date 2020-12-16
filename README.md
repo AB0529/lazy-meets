@@ -8,38 +8,41 @@ You can leave this running in the background forever and it will automaticlly st
 
 For leaving a class, it will check for a threshold of users are left, once the amount of users are below this threshold, it will leave the meet by quitting the browser.
 
-# Requirements
+# Table of Contents
+- [Releases](https://github.com/AB0529/lazy-meets/releases/)
+- [Usage](#Usage)
+    - [Windows](#Windows)
+    - [Mac/Linux](#Mac/Linux)
+- [Build](#Build)
+    - [Requirements](#Requirements)
+    - [Dependencies](#Dependencies)
+    - [Running](#Running)
 
-* Go 1.15 or higher ([Install](https://golang.org/dl/))
-* Selenium with Firefox Driver ([Install Guide](https://selenium-python.readthedocs.io/installation.html))
+# Usage
+To use this, it's fairly simple. Just follow the guide for your platform.
+## Windows
+For Windows user's all you need to do is run the `lazy-meets.exe` file and you're all set!
+## Mac/Linux
+For Unix users, you need to first make sure the file is exectuable, then you can run it via the command line, like so:
+```sh
+# Make it exectuable
+chmod +x ./lazy-meets-mac
+# Run it
+./lazy-meets-mac
+```
 
-# Installation
-
-## Install dependencies via go get
+# Build from Source
+There are binary releases available, but if you want to build from source, here it is.
+## Requirements
+* Go version 1.15 or higher ([Download](https://golang.org/dl/))
+## Dependencies
+This only has a two dependencies `selenium` and `yaml`, to install them:
 ```sh
 go get github.com/tebeka/selenium 
 go get gopkg.in/yaml.v2 
 ```
-# Usage
-Just run the exectuable you need
-
-For Windows Users
--
-Just Run the `lazy-meets.exe` file
-
-For Linux and MacOS Users
-- 
-```sh
-chmod +x lazy-meets-linux
-./lazy-meets-linux
-``` 
-or
-```sh
-chmod +x lazy-meets-macos
-./lazy-meets-macos
-``` 
-
-Or if you prefer running the files directly
+## Running
+To run the program directly with Go:
 ```sh
 go run main.go prompts.go update.go
-``` 
+```

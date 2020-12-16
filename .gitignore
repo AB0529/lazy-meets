@@ -3,3 +3,4 @@ config.*
 schedule.*
 .DS_Store
 Vendors
+Releases
