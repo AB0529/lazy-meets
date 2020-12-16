@@ -13,7 +13,7 @@ For leaving a class, it will check for a threshold of users are left, once the a
 - [Usage](#Usage)
     - [Windows](#Windows)
     - [Mac/Linux](#Mac/Linux)
-- [Build](#Build)
+- [Build](#build-from-source)
     - [Requirements](#Requirements)
     - [Dependencies](#Dependencies)
     - [Running](#Running)
