@@ -36,5 +36,5 @@ chmod +x lazy-meets
 
 Or if you prefer running the files directly
 ```sh
-go run main.go prompts.go
+go run main.go prompts.go update.go
 ``` 

@@ -1,14 +1,9 @@
 package main
 
 import (
-	"archive/tar"
-	"archive/zip"
-	"compress/gzip"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -108,7 +103,7 @@ func StartMeet(class Class, config Config) {
 	// Setup Seleniuim
 	selenium.SetDebug(false)
 	port := 4444
-	service, err := selenium.NewGeckoDriverService("/vendors/geckodriver", port)
+	service, err := selenium.NewGeckoDriverService(Geckodriver, port)
 
 	if err != nil {
 		Error("Invalid geckodriver path")
@@ -120,7 +115,7 @@ func StartMeet(class Class, config Config) {
 	caps := selenium.Capabilities{}
 
 	caps.AddFirefox(firefox.Capabilities{
-		Binary: "/vendors/firefox",
+		Binary: Firefox,
 		Args:   []string{"--log-level=3", "--disable-infobars"},
 		Prefs:  map[string]interface{}{"permissions.default.microphone": 2, "permissions.default.camera": 2},
 	})
@@ -260,227 +255,6 @@ func StartProgram() {
 		// Wait 30 seconds
 		time.Sleep(30 * time.Second)
 	}
-}
-
-// IsDirEmpty determins if a directory is empty
-func IsDirEmpty(name string) (bool, error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
-	_, err = f.Readdir(1)
-
-	if err == io.EOF {
-		return true, nil
-	}
-	return false, err
-}
-
-// DownloadFile will download a file from a url
-func DownloadFile(filepath string, url string) error {
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
-// Untar will untar a tarball
-func Untar(dst string, r io.Reader) error {
-	gzr, err := gzip.NewReader(r)
-	if err != nil {
-		fmt.Println("A")
-		return err
-	}
-	defer gzr.Close()
-
-	tr := tar.NewReader(gzr)
-
-	for {
-		header, err := tr.Next()
-
-		switch {
-
-		case err == io.EOF:
-			return nil
-
-		case err != nil:
-			return err
-
-		case header == nil:
-			continue
-		}
-
-		target := filepath.Join(dst, header.Name)
-
-		switch header.Typeflag {
-
-		case tar.TypeDir:
-			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
-					fmt.Println("A")
-					return err
-				}
-			}
-
-		case tar.TypeReg:
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
-			if err != nil {
-				fmt.Println("AA")
-				return err
-			}
-
-			if _, err := io.Copy(f, tr); err != nil {
-				fmt.Println("AAA")
-				return err
-			}
-
-			f.Close()
-		}
-	}
-}
-
-// Unzip unzip a zip file
-func Unzip(src string, dest string) ([]string, error) {
-	var filenames []string
-
-	r, err := zip.OpenReader(src)
-	if err != nil {
-		return filenames, err
-	}
-	defer r.Close()
-
-	for _, f := range r.File {
-
-		// Store filename/path for returning and using later on
-		fpath := filepath.Join(dest, f.Name)
-
-		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return filenames, fmt.Errorf("%s: illegal file path", fpath)
-		}
-
-		filenames = append(filenames, fpath)
-
-		if f.FileInfo().IsDir() {
-			// Make Folder
-			os.MkdirAll(fpath, os.ModePerm)
-			continue
-		}
-
-		// Make File
-		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-			return filenames, err
-		}
-
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-		if err != nil {
-			return filenames, err
-		}
-
-		rc, err := f.Open()
-		if err != nil {
-			return filenames, err
-		}
-
-		_, err = io.Copy(outFile, rc)
-
-		// Close the file without defer to close before next iteration of loop
-		outFile.Close()
-		rc.Close()
-
-		if err != nil {
-			return filenames, err
-		}
-	}
-	return filenames, nil
-}
-
-// Update will check for updates and download latest updates
-// TODO: Make it actually update instead of just downloading a single version
-// TODO: Move this to a seperate file
-func Update() {
-	// TODO: None of this shit
-	// FIREFOX_LINUX := ""
-	// FIREFOX_WINDOWS := ""
-	// FIREFOX_DARWIN := ""
-	GeckoLinux := "https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-linux64.tar.gz"
-	GeckoWindows := "https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-win64.zip"
-	GeckoDarwin := "https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-macos.tar.gz"
-
-	// Check if directory is empty
-	isEmpty, err := IsDirEmpty("vendors")
-	if err != nil {
-		panic(err)
-	}
-	// Download the geckodrivers and firefox for the platform
-	if isEmpty {
-		// Windows
-		if runtime.GOOS == "windows" {
-			Info("Downloading for platform " + Yellow("Windows"))
-
-			if err := DownloadFile(Basepath+"/vendors/gecko.zip", GeckoWindows); err != nil {
-				panic(err)
-			}
-
-			// Unzip the file
-			Info("Unzipping...")
-			_, err = Unzip(Basepath+"/vendors/gecko.zip", Basepath+"/vendors")
-
-			if err != nil {
-				panic(err)
-			}
-		}
-		// Darwin
-		if runtime.GOOS == "darwin" {
-			Info("Downloading for platform " + Yellow("Darwin"))
-
-			if err := DownloadFile("vendors/gecko.tar.gz", GeckoDarwin); err != nil {
-				panic(err)
-			}
-
-			// Untar the tarball
-			file, err := os.Open(Basepath + "/vendors/gecko.tar.gz")
-			defer file.Close()
-			Info("Unzipping...")
-			err = Untar(Basepath+"/vendors", file)
-
-			if err != nil {
-				panic(err)
-			}
-		}
-		// Linux
-		if runtime.GOOS == "linux" {
-			Info("Downloading for platform " + Yellow("Linux"))
-
-			if err := DownloadFile(Basepath+"vendors/gecko.tar.gz", GeckoLinux); err != nil {
-				panic(err)
-			}
-
-			// Untar the tarball
-			file, err := os.Open(Basepath + "/vendors/gecko.tar.gz")
-			defer file.Close()
-			Info("Unzipping...")
-			err = Untar(Basepath+"/vendors", file)
-
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
 }
 
 func main() {
