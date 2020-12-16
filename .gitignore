@@ -1,3 +1,6 @@
 *.log
 config.*
 schedule.*
+.DS_Store
+vendors/geckodriver*
+vendors/firefox*

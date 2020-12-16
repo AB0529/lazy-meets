@@ -20,6 +20,7 @@ type Config struct {
 	Email       string
 	Password    string
 	Geckodriver string
+	Firefox     string
 }
 
 // Class the structure for a class
@@ -189,11 +190,10 @@ func ConfigQuestions() Config {
 	questions := []string{
 		Purple("The amount of people left before you leave"),
 		Purple("The window of time to join a class after the inital time (minutes)"),
-		Purple("The absolute path to your ") + Yellow("Geckodriver"),
 		Purple("The email used to login"),
 		Purple("The password for that email"),
 	}
-	answers := make([]string, 0, 5)
+	answers := make([]string, 0, 4)
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for i, q := range questions {
@@ -226,7 +226,7 @@ func ConfigQuestions() Config {
 		os.Exit(1)
 	}
 
-	return Config{Leave: l, Skip: s, Email: answers[3], Password: answers[4], Geckodriver: answers[2]}
+	return Config{Leave: l, Skip: s, Email: answers[2], Password: answers[3]}
 }
 
 // ClassQuestions prompts questions used to fill in class details
