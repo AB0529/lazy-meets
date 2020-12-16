@@ -1,4 +1,4 @@
-# Lazy-Meets
+# Lazy-Meets 
 
 Are you so lazy you can't even go to online classes? Well fret no more!
 
@@ -18,6 +18,8 @@ For leaving a class, it will check for a threshold of users are left, once the a
     - [Dependencies](#Dependencies)
     - [Running](#Running)
 
+---
+![showcase-img](https://raw.githubusercontent.com/AB0529/lazy-meets/master/Showcase-Image.png)
 # Usage
 To use this, it's fairly simple. Just follow the guide for your platform.
 ## Windows
