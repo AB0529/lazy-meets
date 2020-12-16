@@ -45,6 +45,8 @@ func IsDirEmpty(name string) (bool, error) {
 
 // DownloadFile will download a file off a link
 func DownloadFile(dest string, url *url.URL) error {
+	Info("Downloading for platform " + Yellow(strings.ToUpper(runtime.GOOS)))
+
 	// Get the file data
 	resp, err := http.Get(url.String())
 	if err != nil {
@@ -235,47 +237,53 @@ func Update() {
 		panic(err)
 	}
 
-	if empty {
-		// Download the Geckodrivers for the specific platform
-		Info("Downloading for platform " + Yellow(strings.ToUpper(runtime.GOOS)))
-		switch runtime.GOOS {
-		case "windows":
+	// Download the Geckodrivers for the specific platform
+	switch runtime.GOOS {
+	case "windows":
+		if empty {
 			DownloadAndUnzip(geckoWindows, Vendors+"/gecko.zip", Vendors)
-			Geckodriver = Vendors + "/geckodriver.exe"
-			// Check if Firefox is installed
-			_, err := os.Stat("C:\\Program Files\\Mozilla Firefox\\Firefox.exe")
-			if err != nil {
-				Error(Yellow("Firefox not found ") + "make sure your Firefox installation is located at " + Red("C:\\Program Files\\Mozilla Firefox\\Firefox.exe"))
-				os.Exit(1)
-			}
-			Firefox = "C:\\Program Files\\Mozilla Firefox\\Firefox.exe"
-			break
-		case "darwin":
-			DownloadAndUntar(geckoDarwin, Vendors+"/gecko.tar.gz", Vendors)
-			Geckodriver = Vendors + "/geckodriver"
-			// Check if Firefox is installed
-			_, err := os.Stat("/Applications/Firefox.app")
-			if err != nil {
-				Error(Yellow("Firefox not found ") + "make sure your Firefox installation is located at " + Red("/Applications/Firefox.app"))
-				os.Exit(1)
-			}
-			Firefox = "/Applications/Firefox.app"
-			break
-		case "linux":
-			DownloadAndUntar(geckoLinux, Vendors+"/gecko.tar.gz", Vendors)
-			Geckodriver = Vendors + "/geckodriver"
-			// Check if Firefox is installed
-			_, err := os.Stat("/usr/bin/firefox")
-			if err != nil {
-				Error(Yellow("Firefox not found ") + "make sure your Firefox installation is located at " + Red("/usr/bin/firefox"))
-				os.Exit(1)
-			}
-			Firefox = "/usr/bin/firefox"
-			break
-		default:
-			Error(Yellow(runtime.GOOS) + " is not a supported platform")
+		}
+
+		Geckodriver = Vendors + "/geckodriver.exe"
+		// Check if Firefox is installed
+		_, err := os.Stat("C:\\Program Files\\Mozilla Firefox\\Firefox.exe")
+		if err != nil {
+			Error(Yellow("Firefox not found ") + "make sure your Firefox installation is located at " + Red("C:\\Program Files\\Mozilla Firefox\\Firefox.exe"))
 			os.Exit(1)
 		}
+		Firefox = "C:\\Program Files\\Mozilla Firefox\\Firefox.exe"
+		break
+	case "darwin":
+		if empty {
+			DownloadAndUntar(geckoDarwin, Vendors+"/gecko.tar.gz", Vendors)
+		}
+
+		Geckodriver = Vendors + "/geckodriver"
+		// Check if Firefox is installed
+		_, err := os.Stat("/Applications/Firefox.app")
+		if err != nil {
+			Error(Yellow("Firefox not found ") + "make sure your Firefox installation is located at " + Red("/Applications/Firefox.app"))
+			os.Exit(1)
+		}
+		Firefox = "/Applications/Firefox.app"
+		break
+	case "linux":
+		if empty {
+			DownloadAndUntar(geckoLinux, Vendors+"/gecko.tar.gz", Vendors)
+		}
+
+		Geckodriver = Vendors + "/geckodriver"
+		// Check if Firefox is installed
+		_, err := os.Stat("/usr/bin/firefox")
+		if err != nil {
+			Error(Yellow("Firefox not found ") + "make sure your Firefox installation is located at " + Red("/usr/bin/firefox"))
+			os.Exit(1)
+		}
+		Firefox = "/usr/bin/firefox"
+		break
+	default:
+		Error(Yellow(runtime.GOOS) + " is not a supported platform")
+		os.Exit(1)
 	}
 
 }
