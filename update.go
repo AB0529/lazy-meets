@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -21,7 +22,7 @@ var (
 	geckoWindows = "https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-win64.zip"
 
 	// Vendors path to the Vendors dir
-	Vendors = GetBasePath() + "/Vendors"
+	Vendors = "./Vendors"
 	// Geckodriver Path to Geckodrivers
 	Geckodriver = ""
 	// Firefox Path to Firefox
@@ -271,6 +272,8 @@ func Update() {
 		if empty {
 			DownloadAndUntar(geckoLinux, Vendors+"/gecko.tar.gz", Vendors)
 		}
+		// Makes sure Geckodriver is not running
+		exec.Command("pkill geckodriver").Run()
 
 		Geckodriver = Vendors + "/geckodriver"
 		// Check if Firefox is installed
