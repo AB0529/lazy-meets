@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -10,17 +10,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AB0529/prompter"
+
 	"gopkg.in/yaml.v2"
 )
 
 // Config the structure for the config
 type Config struct {
-	Leave       int
-	Skip        int
-	Email       string
-	Password    string
-	Geckodriver string
-	Firefox     string
+	Leave    int
+	Skip     int
+	Email    string
+	Password string
 }
 
 // Class the structure for a class
@@ -93,194 +93,243 @@ func ParseWeekday(s string) (time.Weekday, error) {
 	return time.Sunday, fmt.Errorf("invalid weekday '%s'", s)
 }
 
+func isOverZero(val interface{}) error {
+	n, err := strconv.Atoi(val.(string))
+	if err != nil {
+		return errors.New("Value has to be numeric")
+	}
+	if n <= 0 {
+		return errors.New("Value has to be above 0")
+	}
+
+	return nil
+}
+
+// Weekday validation
+func isWeekday(val interface{}) error {
+	weekdaysStr := strings.Split(val.(string), " ")
+	for _, w := range weekdaysStr {
+		_, err := ParseWeekday(w)
+		if err != nil {
+			return errors.New(val.(string) + " is not a valid day")
+		}
+	}
+
+	return nil
+}
+
+// Time validation
+func isCorrectTime(val interface{}) error {
+	// Make sure input has ':'
+	if !strings.Contains(val.(string), ":") {
+		return errors.New(val.(string) + " is not a valid time")
+	}
+
+	timeStr := strings.Split(val.(string), ":")
+	now := time.Now().Local()
+	_, err := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%d/%d/%d %s:%s", now.Month(), now.Day(), now.Year(), timeStr[0], timeStr[1]))
+
+	if err != nil {
+		return errors.New(val.(string) + " is not a valid time")
+	}
+
+	return nil
+}
+
+// Url Validation
+func isURL(val interface{}) error {
+	_, err := url.ParseRequestURI(val.(string))
+	if err != nil {
+		return errors.New("Invalid URL")
+	}
+
+	return nil
+}
+
 // IniitalQuesitons prompts questions used for inital prompt
 func IniitalQuesitons() {
+	qs := []*prompter.Question{
+		{
+			Message:   "What do you want to do?",
+			Name:      "initialPrompt",
+			Validator: []prompter.Validator{prompter.Required},
+			Type:      prompter.Multiselect{Red("Delete Class"), Yellow("Add Class"), Teal("Edit Class"), Purple("Start Program")},
+		},
+	}
+
 	var schedule Schedule
-	questions := []string{
-		Magenta("What do you want to do?\n") + Green("1. ") + Purple("Start Program\n") + Green("2. ") + Teal("Edit Classes\n") + Green("3. ") + Red("Add Classes\n") + Green("4. ") + Yellow("Delete Classes"),
-	}
-	scheduleQuestions := []string{
-		Magenta("Which class do you want to edit?"),
-	}
-	scanner := bufio.NewScanner(os.Stdin)
+	ans := map[string]interface{}{}
+
+	prompter.Ask(&prompter.Prompt{Questions: qs}, &ans)
+
 	// Get the schedule
 	file, _ := ioutil.ReadFile("./schedule.yml")
 	yaml.Unmarshal(file, &schedule)
+	// Find all classes
+	class := prompter.Multiselect{}
 
-	for _, q := range questions {
-		fmt.Println(Yellow("> ") + q)
-		scanner.Scan()
-		t := scanner.Text()
+	for _, classes := range schedule.Classes {
+		class = append(class, classes.Name)
+	}
+	// Form class edit questions
+	editQS := []*prompter.Question{
+		{
+			Message: "Select a class",
+			Name:    "class",
+			Type:    class,
+		},
+	}
 
-		switch t {
-		case "1":
-			StartProgram()
-			break
-		// Edit
-		case "2":
-			// The class to edit
-			for _, q2 := range scheduleQuestions {
-				fmt.Println(Yellow("> ") + q2)
-				for i, classes := range schedule.Classes {
-					fmt.Printf("%s. %s\n", Green(i+1), Purple(classes.Name))
-				}
-
-				scanner.Scan()
-				t, err := strconv.Atoi(scanner.Text())
-				if err != nil {
-					Error(err.Error())
-					os.Exit(1)
-				}
-				// Update the class
-				schedule.Classes[t-1] = ClassQuestions()
+	switch ans["initialPrompt"] {
+	case Purple("Start Program"):
+		prompter.ClearScreen()
+		StartProgram()
+		break
+	// Edit
+	case Teal("Edit Class"):
+		prompter.ClearScreen()
+		// The class to edit
+		prompter.Ask(&prompter.Prompt{Questions: editQS}, &ans)
+		// Update the class
+		for i, sc := range schedule.Classes {
+			if sc.Name == ans["class"] {
+				schedule.Classes[i] = ClassQuestions()
 			}
-			// Rewrite file
-			file, _ = yaml.Marshal(schedule)
-			ioutil.WriteFile("schedule.yml", file, 0644)
-			break
-		// Add
-		case "3":
-			newClass := ClassQuestions()
-			schedule.Classes = append(schedule.Classes, newClass)
-			// Rewrite file
-			file, _ = yaml.Marshal(schedule)
-			ioutil.WriteFile("schedule.yml", file, 0644)
-			break
-		// Delete
-		case "4":
-			// The class to delete
-			for _, q2 := range scheduleQuestions {
-				fmt.Println(Yellow("> ") + q2)
-				for i, classes := range schedule.Classes {
-					fmt.Printf("%s. %s\n", Green(i+1), Purple(classes.Name))
-				}
+		}
+		// Rewrite file
+		file, _ = yaml.Marshal(schedule)
+		ioutil.WriteFile("schedule.yml", file, 0644)
+		break
+	// Add
+	case Yellow("Add Class"):
+		prompter.ClearScreen()
+		newClass := ClassQuestions()
+		schedule.Classes = append(schedule.Classes, newClass)
+		// Rewrite file
+		file, _ = yaml.Marshal(schedule)
+		ioutil.WriteFile("schedule.yml", file, 0644)
+		break
+	// Delete
+	case Red("Delete Class"):
+		prompter.ClearScreen()
+		// The class to delete
+		prompter.Ask(&prompter.Prompt{Questions: editQS}, &ans)
 
-				scanner.Scan()
-				t, err := strconv.Atoi(scanner.Text())
-				if err != nil {
-					Error(err.Error())
-					os.Exit(1)
-				}
-				// Delete the class
-				l := len(schedule.Classes)
-				copy(schedule.Classes[t:], schedule.Classes[t:])
+		// Delete the class
+		l := len(schedule.Classes)
+		for i, sc := range schedule.Classes {
+			if sc.Name == ans["class"] {
+				copy(schedule.Classes[i:], schedule.Classes[i:])
 				schedule.Classes[l-1] = Class{}
 				schedule.Classes = schedule.Classes[:l-1]
 			}
-
-			// Delete file if no classes are present
-			if len(schedule.Classes) <= 0 {
-				os.Remove("./schedule.yml")
-				break
-			}
-
-			// Rewrite file
-			file, _ = yaml.Marshal(schedule)
-			ioutil.WriteFile("schedule.yml", file, 0644)
-			break
-		default:
-			StartProgram()
 		}
 
+		// Delete file if no classes are present
+		if len(schedule.Classes) <= 0 {
+			os.Remove("./schedule.yml")
+			break
+		}
+
+		// Rewrite file
+		file, _ = yaml.Marshal(schedule)
+		ioutil.WriteFile("schedule.yml", file, 0644)
+		break
+	default:
+		StartProgram()
 	}
+
+	// Clear screen and init
+	prompter.ClearScreen()
+	Init()
 }
 
 // ConfigQuestions prompts questions used to fill in the config
 func ConfigQuestions() Config {
-	questions := []string{
-		Purple("The amount of people left before you leave"),
-		Purple("The window of time to join a class after the inital time (minutes)"),
-		Purple("The email used to login"),
-		Purple("The password for that email"),
+	qs := []*prompter.Question{
+		{
+			Message:   "The amount of people left before you leave",
+			Name:      "leave",
+			Validator: []prompter.Validator{prompter.Required, isOverZero},
+		},
+		{
+			Message:   "The window of time to join a class after the inital time (minutes)",
+			Name:      "skip",
+			Validator: []prompter.Validator{prompter.Required, isOverZero},
+		},
+		{
+			Message:   "The email used to login",
+			Name:      "email",
+			Validator: []prompter.Validator{prompter.Required},
+		},
+		{
+			Message:   "The password used to login",
+			Name:      "password",
+			Validator: []prompter.Validator{prompter.Required},
+			Type:      prompter.Password{},
+		},
 	}
-	answers := make([]string, 0, 4)
-	scanner := bufio.NewScanner(os.Stdin)
+	answers := struct {
+		Leave    int
+		Skip     int
+		Email    string
+		Password string
+	}{}
+	prompter.Ask(&prompter.Prompt{Questions: qs}, &answers)
 
-	for i, q := range questions {
-		fmt.Println(Yellow("> ") + q)
-
-		// Hide pasword input
-		if i == len(questions)-1 {
-			fmt.Print("\033[8m")   // Hide text
-			fmt.Print("\033[?25l") // Hide cursor
-
-			scanner.Scan()
-			t := scanner.Text()
-			answers = append(answers, t)
-
-			fmt.Println("\033[28m") // Show text
-			fmt.Print("\033[?25h")  // Show cursor
-
-			break
-		}
-
-		scanner.Scan()
-		t := scanner.Text()
-		answers = append(answers, t)
-	}
-	l, _ := strconv.Atoi(answers[0])
-	s, _ := strconv.Atoi(answers[1])
-
-	if l <= 0 || s <= 0 {
+	if answers.Leave <= 0 || answers.Skip <= 0 {
 		Error("Leave count or Skip count cannot be 0")
 		os.Exit(1)
 	}
 
-	return Config{Leave: l, Skip: s, Email: answers[2], Password: answers[3]}
+	return Config{Leave: answers.Leave, Skip: answers.Skip, Email: answers.Email, Password: answers.Password}
 }
 
 // ClassQuestions prompts questions used to fill in class details
 func ClassQuestions() Class {
-	questions := []string{
-		Teal("A friendly name for the class"),
-		Teal("The weekdays the class takes place (seperate by space)"),
-		Teal("The time when the class starts (ex. 7:01am)"),
-		Teal("The Google Meets URL needed to join"),
+	qs := []*prompter.Question{
+		{
+			Message:   "A friendly name for the class",
+			Name:      "name",
+			Validator: []prompter.Validator{prompter.Required},
+		},
+		{
+			Message:   "The weekdays the class takes place (seperate by space)",
+			Name:      "weekdays",
+			Validator: []prompter.Validator{prompter.Required, isWeekday},
+		},
+		{
+			Message:   "The time when the class starts (ex. 7:01am)",
+			Name:      "time",
+			Validator: []prompter.Validator{prompter.Required, isCorrectTime},
+		},
+		{
+			Message:   "The Google Meets URL needed to join",
+			Name:      "url",
+			Validator: []prompter.Validator{prompter.Required, isURL},
+		},
 	}
-	answers := make([]string, 0, 4)
-	scanner := bufio.NewScanner(os.Stdin)
-
-	for _, q := range questions {
-		fmt.Println(Red("> ") + q)
-		scanner.Scan()
-		t := scanner.Text()
-		answers = append(answers, t)
-	}
-
-	name := answers[0]
-	if len(name) <= 0 {
-		Error("Name of class cannot be empty")
-		os.Exit(1)
-	}
+	answers := struct {
+		Name     string
+		Weekdays []string
+		Time     string
+		URL      string
+	}{}
+	// Ask the questions
+	prompter.Ask(&prompter.Prompt{Questions: qs}, &answers)
 
 	// Weekday validation
-	weekdaysStr := strings.Split(answers[1], " ")
-	weekdays := make([]time.Weekday, 0, len(weekdaysStr))
-	for _, w := range weekdaysStr {
-		wd, err := ParseWeekday(w)
-		if err != nil {
-			Error(err.Error())
-			os.Exit(1)
-		}
-
+	weekdays := make([]time.Weekday, 0, len(answers.Weekdays))
+	for _, w := range answers.Weekdays {
+		wd, _ := ParseWeekday(w)
 		weekdays = append(weekdays, wd)
 	}
 	// Time validation
 	now := time.Now().Local()
-	timeStr := strings.Split(answers[2], ":")
-	t, err := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%d/%d/%d %s:%s", now.Month(), now.Day(), now.Year(), timeStr[0], timeStr[1]))
-
-	if err != nil {
-		Error("Could not parse time,", err.Error())
-		os.Exit(1)
-	}
-
+	timeStr := strings.Split(answers.Time, ":")
+	t, _ := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%d/%d/%d %s:%s", now.Month(), now.Day(), now.Year(), timeStr[0], timeStr[1]))
 	// Url Validation
-	url, err := url.ParseRequestURI(answers[3])
-	if err != nil {
-		Error(err.Error())
-		os.Exit(1)
-	}
+	url, _ := url.ParseRequestURI(answers.URL)
 
-	return Class{Name: name, Weekdays: weekdays, JoinTime: t, URI: url}
+	return Class{Name: answers.Name, Weekdays: weekdays, JoinTime: t, URI: url}
 }

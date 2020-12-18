@@ -253,9 +253,14 @@ func StartProgram() {
 	}
 }
 
-func main() {
+// Init initalizes and runs the program
+func Init() {
 	Update()
 	NewConfigFile()
 	NewScheduleFile()
 	InitialPrompt()
+}
+
+func main() {
+	Init()
 }
