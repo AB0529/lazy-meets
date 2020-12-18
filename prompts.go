@@ -263,9 +263,10 @@ func ConfigQuestions() Config {
 			Validator: []prompter.Validator{prompter.Required},
 		},
 		{
-			Message: "The password used to login",
-			Name:    "password",
-			Type:    prompter.Password{},
+			Message:   "The password used to login",
+			Name:      "password",
+			Validator: []prompter.Validator{prompter.Required},
+			Type:      prompter.Password{},
 		},
 	}
 	answers := struct {
