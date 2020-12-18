@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -263,4 +264,5 @@ func Init() {
 
 func main() {
 	Init()
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
