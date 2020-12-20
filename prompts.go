@@ -136,16 +136,6 @@ func isCorrectTime(val interface{}) error {
 	return nil
 }
 
-// Url Validation
-func isURL(val interface{}) error {
-	_, err := url.ParseRequestURI(val.(string))
-	if err != nil {
-		return errors.New("Invalid URL")
-	}
-
-	return nil
-}
-
 // IniitalQuesitons prompts questions used for inital prompt
 func IniitalQuesitons() {
 	qs := []*prompter.Question{
@@ -306,7 +296,7 @@ func ClassQuestions() Class {
 		{
 			Message:   "The Google Meets URL needed to join",
 			Name:      "url",
-			Validator: []prompter.Validator{prompter.Required, isURL},
+			Validator: []prompter.Validator{prompter.Required, prompter.IsURL},
 		},
 	}
 	answers := struct {
