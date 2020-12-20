@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -69,6 +71,19 @@ func Info(msg ...interface{}) {
 	fmt.Printf("[%s] - %s\n", Yellow("INFO"), msg)
 }
 
+// ClearScreen will clear the screen
+func ClearScreen() {
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command("cmd", "/c", "cls")
+		cmd.Stdout = os.Stdout
+		cmd.Run()
+	} else {
+		cmd := exec.Command("clear")
+		cmd.Stdout = os.Stdout
+		cmd.Run()
+	}
+}
+
 // Error error print
 func Error(msg ...interface{}) {
 	fmt.Printf("[%s] - %s\n", Red("ERROR"), msg)
@@ -111,7 +126,7 @@ func isWeekday(val interface{}) error {
 	for _, w := range weekdaysStr {
 		_, err := ParseWeekday(w)
 		if err != nil {
-			return errors.New(val.(string) + " is not a valid day")
+			return errors.New(w + " is not a valid day")
 		}
 	}
 
@@ -138,48 +153,48 @@ func isCorrectTime(val interface{}) error {
 
 // IniitalQuesitons prompts questions used for inital prompt
 func IniitalQuesitons() {
-	qs := []*prompter.Question{
-		{
-			Message:   "What do you want to do?",
-			Name:      "initialPrompt",
-			Validator: []prompter.Validator{prompter.Required},
-			Type:      prompter.Multiselect{Red("Delete Class"), Yellow("Add Class"), Teal("Edit Class"), Purple("Start Program")},
+	qs := []interface{}{
+		&prompter.Multiselect{
+			Message:    "What do you want to do?",
+			Name:       "initialPrompt",
+			Options:    []string{Red("Delete Class"), Yellow("Add Class"), Teal("Edit Class"), Purple("Start Program")},
+			Validators: []prompter.Validator{prompter.Required},
 		},
 	}
 
 	var schedule Schedule
 	ans := map[string]interface{}{}
 
-	prompter.Ask(&prompter.Prompt{Questions: qs}, &ans)
+	prompter.Ask(&prompter.Prompt{Types: qs}, &ans)
 
 	// Get the schedule
 	file, _ := ioutil.ReadFile("./schedule.yml")
 	yaml.Unmarshal(file, &schedule)
 	// Find all classes
-	class := prompter.Multiselect{}
+	class := []string{}
 
 	for _, classes := range schedule.Classes {
 		class = append(class, classes.Name)
 	}
 	// Form class edit questions
-	editQS := []*prompter.Question{
-		{
+	editQS := []interface{}{
+		&prompter.Multiselect{
 			Message: "Select a class",
 			Name:    "class",
-			Type:    class,
+			Options: class,
 		},
 	}
 
 	switch ans["initialPrompt"] {
 	case Purple("Start Program"):
-		prompter.ClearScreen()
+		ClearScreen()
 		StartProgram()
 		break
 	// Edit
 	case Teal("Edit Class"):
-		prompter.ClearScreen()
+		ClearScreen()
 		// The class to edit
-		prompter.Ask(&prompter.Prompt{Questions: editQS}, &ans)
+		prompter.Ask(&prompter.Prompt{Types: editQS}, &ans)
 		// Update the class
 		for i, sc := range schedule.Classes {
 			if sc.Name == ans["class"] {
@@ -192,7 +207,7 @@ func IniitalQuesitons() {
 		break
 	// Add
 	case Yellow("Add Class"):
-		prompter.ClearScreen()
+		ClearScreen()
 		newClass := ClassQuestions()
 		schedule.Classes = append(schedule.Classes, newClass)
 		// Rewrite file
@@ -201,9 +216,9 @@ func IniitalQuesitons() {
 		break
 	// Delete
 	case Red("Delete Class"):
-		prompter.ClearScreen()
+		ClearScreen()
 		// The class to delete
-		prompter.Ask(&prompter.Prompt{Questions: editQS}, &ans)
+		prompter.Ask(&prompter.Prompt{Types: editQS}, &ans)
 
 		// Delete the class
 		l := len(schedule.Classes)
@@ -230,33 +245,32 @@ func IniitalQuesitons() {
 	}
 
 	// Clear screen and init
-	prompter.ClearScreen()
+	ClearScreen()
 	Init()
 }
 
 // ConfigQuestions prompts questions used to fill in the config
 func ConfigQuestions() Config {
-	qs := []*prompter.Question{
-		{
-			Message:   "The amount of people left before you leave",
-			Name:      "leave",
-			Validator: []prompter.Validator{prompter.Required, isOverZero},
+	qs := []interface{}{
+		&prompter.Input{
+			Message:    "The amount of people left before you leave",
+			Name:       "leave",
+			Validators: []prompter.Validator{prompter.Required, isOverZero},
 		},
-		{
-			Message:   "The window of time to join a class after the inital time (minutes)",
-			Name:      "skip",
-			Validator: []prompter.Validator{prompter.Required, isOverZero},
+		&prompter.Input{
+			Message:    "The window of time to join a class after the inital time (minutes)",
+			Name:       "skip",
+			Validators: []prompter.Validator{prompter.Required, isOverZero},
 		},
-		{
-			Message:   "The email used to login",
-			Name:      "email",
-			Validator: []prompter.Validator{prompter.Required},
+		&prompter.Input{
+			Message:    "The email used to login",
+			Name:       "email",
+			Validators: []prompter.Validator{prompter.Required},
 		},
-		{
-			Message:   "The password used to login",
-			Name:      "password",
-			Validator: []prompter.Validator{prompter.Required},
-			Type:      prompter.Password{},
+		&prompter.Password{
+			Message:    "The password used to login",
+			Name:       "password",
+			Validators: []prompter.Validator{prompter.Required},
 		},
 	}
 	answers := struct {
@@ -265,7 +279,7 @@ func ConfigQuestions() Config {
 		Email    string
 		Password string
 	}{}
-	prompter.Ask(&prompter.Prompt{Questions: qs}, &answers)
+	prompter.Ask(&prompter.Prompt{Types: qs}, &answers)
 
 	if answers.Leave <= 0 || answers.Skip <= 0 {
 		Error("Leave count or Skip count cannot be 0")
@@ -277,43 +291,45 @@ func ConfigQuestions() Config {
 
 // ClassQuestions prompts questions used to fill in class details
 func ClassQuestions() Class {
-	qs := []*prompter.Question{
-		{
-			Message:   "A friendly name for the class",
-			Name:      "name",
-			Validator: []prompter.Validator{prompter.Required},
+	qs := []interface{}{
+		&prompter.Input{
+			Message:    "A friendly name for the class",
+			Name:       "name",
+			Validators: []prompter.Validator{prompter.Required},
 		},
-		{
-			Message:   "The weekdays the class takes place (seperate by space)",
-			Name:      "weekdays",
-			Validator: []prompter.Validator{prompter.Required, isWeekday},
+		&prompter.Input{
+			Message:    "The weekdays the class takes place (seperate by space)",
+			Name:       "weekdays",
+			Validators: []prompter.Validator{prompter.Required, isWeekday},
 		},
-		{
-			Message:   "The time when the class starts (ex. 7:01am)",
-			Name:      "time",
-			Validator: []prompter.Validator{prompter.Required, isCorrectTime},
+		&prompter.Input{
+			Message:    "The time when the class starts (ex. 7:01am)",
+			Name:       "time",
+			Validators: []prompter.Validator{prompter.Required, isCorrectTime},
 		},
-		{
-			Message:   "The Google Meets URL needed to join",
-			Name:      "url",
-			Validator: []prompter.Validator{prompter.Required, prompter.IsURL},
+		&prompter.Input{
+			Message:    "The Google Meets URL needed to join",
+			Name:       "url",
+			Validators: []prompter.Validator{prompter.Required, prompter.IsURL},
 		},
 	}
 	answers := struct {
 		Name     string
-		Weekdays []string
+		Weekdays string
 		Time     string
 		URL      string
 	}{}
 	// Ask the questions
-	prompter.Ask(&prompter.Prompt{Questions: qs}, &answers)
+	prompter.Ask(&prompter.Prompt{Types: qs}, &answers)
 
 	// Weekday validation
-	weekdays := make([]time.Weekday, 0, len(answers.Weekdays))
-	for _, w := range answers.Weekdays {
-		wd, _ := ParseWeekday(w)
-		weekdays = append(weekdays, wd)
+	weekdayStr := strings.Split(answers.Weekdays, " ")
+	weekdays := []time.Weekday{}
+	for _, wd := range weekdayStr {
+		w, _ := ParseWeekday(wd)
+		weekdays = append(weekdays, w)
 	}
+
 	// Time validation
 	now := time.Now().Local()
 	timeStr := strings.Split(answers.Time, ":")
