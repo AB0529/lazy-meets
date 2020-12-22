@@ -114,7 +114,7 @@ func StartMeet(class Class, config Config) {
 	caps.AddFirefox(firefox.Capabilities{
 		Binary: Firefox,
 		Args:   []string{"--log-level=3", "--disable-infobars"},
-		Prefs:  map[string]interface{}{"permissions.default.microphone": 2, "permissions.default.camera": 2},
+		Prefs:  map[string]interface{}{"permissions.default.microphone": 1, "permissions.default.camera": 1},
 	})
 
 	// Firefox web driver
@@ -155,6 +155,16 @@ func StartMeet(class Class, config Config) {
 	// Goto the Google meets
 	wd.Get(class.URI.String())
 	time.Sleep(5 * time.Second)
+	// Find and click the mic off button and camera button
+	btns, err := wd.FindElements(selenium.ByXPATH, "//div[@data-is-muted='false']")
+	if err == nil {
+		for _, b := range btns {
+			b.Click()
+			// Wait half a second between clicks, just in case
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+
 	// Find Join button
 	btn, err = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Join')]")
 	if err != nil {
@@ -205,6 +215,15 @@ func StartMeet(class Class, config Config) {
 	defer wg.Done()
 }
 
+func contains(s []time.Weekday, e time.Weekday) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
 // CheckSchedule will check the schedule for right time
 func CheckSchedule(now time.Time, config Config, schedule Schedule) bool {
 	// Get the current weekday
@@ -212,10 +231,8 @@ func CheckSchedule(now time.Time, config Config, schedule Schedule) bool {
 
 	// Make sure there's a calss for the weekday and the time is right
 	for _, class := range schedule.Classes {
-		for _, wd := range class.Weekdays {
-			if weekday != wd {
-				continue
-			}
+		if !contains(class.Weekdays, weekday) {
+			continue
 		}
 
 		// TODO: Use proper time compare instead of this
