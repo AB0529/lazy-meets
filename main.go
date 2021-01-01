@@ -174,6 +174,19 @@ func StartMeet(class Class, config Config) {
 	// Wait until class has been entered
 	wd.WaitWithTimeout(ElementIsLocated(selenium.ByID, "wnPUne N0PJ8e"), time.Second*10)
 
+	// Detect if a breakout room popup started
+
+	// TODO: Join breakout
+
+	// Ignore leave condition when in breakout room
+	// oldLeaveCondition := config.Leave
+	// config.Leave = 999
+
+	// TODO: Detect when breakout has ended
+
+	// Reset leave condition when breakout has ended
+	// config.Leave = oldLeaveCondition
+
 	// Number of people in the call
 	prevNum := 0
 	numReg, _ := regexp.Compile("\\d+")
