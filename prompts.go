@@ -54,7 +54,16 @@ var (
 	// Teal color teal
 	Teal = Color("\033[1;36m%s\033[0m")
 	// White color white
-	White = Color("\033[1;37m%s\033[0m")
+	White    = Color("\033[1;37m%s\033[0m")
+	weekdays = map[string]time.Weekday{
+		"sunday":    time.Sunday,
+		"monday":    time.Monday,
+		"tuesday":   time.Tuesday,
+		"wednesday": time.Wednesday,
+		"thursday":  time.Thursday,
+		"friday":    time.Friday,
+		"saturday":  time.Saturday,
+	}
 )
 
 // Color colorizes strings
@@ -91,16 +100,6 @@ func Error(msg ...interface{}) {
 
 // ParseWeekday makes sure a weekday is valid
 func ParseWeekday(s string) (time.Weekday, error) {
-	var weekdays = map[string]time.Weekday{
-		"sunday":    time.Sunday,
-		"monday":    time.Monday,
-		"tuesday":   time.Tuesday,
-		"wednesday": time.Wednesday,
-		"thursday":  time.Thursday,
-		"friday":    time.Friday,
-		"saturday":  time.Saturday,
-	}
-
 	if d, ok := weekdays[strings.ToLower(s)]; ok {
 		return d, nil
 	}
@@ -142,13 +141,29 @@ func isCorrectTime(val interface{}) error {
 
 	timeStr := strings.Split(val.(string), ":")
 	now := time.Now().Local()
-	_, err := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%d/%d/%d %s:%s", now.Month(), now.Day(), now.Year(), timeStr[0], timeStr[1]))
+	_, err := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%s %s:%s", now.Format("01/02/2006"), timeStr[0], timeStr[1]))
 
 	if err != nil {
 		return errors.New(val.(string) + " is not a valid time")
 	}
 
 	return nil
+}
+
+// ListClasses will show an output of current classes
+func ListClasses(sc Schedule) {
+	ClearScreen()
+	Info("You have a total of " + Red(len(sc.Classes)) + " classes")
+	for _, c := range sc.Classes {
+		// This is awful, but it works
+		wds := make([]string, len(c.Weekdays))
+		for _, w := range c.Weekdays {
+			wds = append(wds, Yellow(w.String()))
+		}
+		// 																														Big bruh moment
+		fmt.Printf("%s at %s (%s)\n", Red(c.Name), Teal(strings.Split(c.JoinTime.Format("2006-01-02 3:4pm"), " ")[1]), strings.TrimSpace(strings.Join(wds, " ")))
+	}
+	fmt.Println()
 }
 
 // IniitalQuesitons prompts questions used for inital prompt
@@ -164,8 +179,6 @@ func IniitalQuesitons() {
 
 	var schedule Schedule
 	ans := map[string]interface{}{}
-
-	prompter.Ask(&prompter.Prompt{Types: qs}, &ans)
 
 	// Get the schedule
 	file, _ := ioutil.ReadFile("./schedule.yml")
@@ -185,6 +198,12 @@ func IniitalQuesitons() {
 		},
 	}
 
+	// List the classes if there are any
+	if len(schedule.Classes) > 0 {
+		ListClasses(schedule)
+	}
+
+	prompter.Ask(&prompter.Prompt{Types: qs}, &ans)
 	switch ans["initialPrompt"] {
 	case Purple("Start Program"):
 		ClearScreen()
@@ -333,7 +352,7 @@ func ClassQuestions() Class {
 	// Time validation
 	now := time.Now().Local()
 	timeStr := strings.Split(answers.Time, ":")
-	t, _ := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%d/%d/%d %s:%s", now.Month(), now.Day(), now.Year(), timeStr[0], timeStr[1]))
+	t, _ := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%s %s:%s", now.Format("01/02/2006"), timeStr[0], timeStr[1]))
 	// Url Validation
 	url, _ := url.ParseRequestURI(answers.URL)
 
