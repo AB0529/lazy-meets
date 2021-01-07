@@ -162,11 +162,18 @@ func StartMeet(class Class, config Config) {
 	// Find Join button
 	btn, err = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Join')]")
 	if err != nil {
-		btn, _ = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Ask')]")
+		btn, err = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Ask')]")
+		if err != nil {
+			Error("Could not join meet, trying again...")
+			// Restart
+			wd.Quit()
+			service.Stop()
+			StartMeet(class, config)
+		}
 	}
 	btn.Click()
 	// Wait until class has been entered
-	wd.WaitWithTimeout(ElementIsLocated(selenium.ByID, "wnPUne N0PJ8e"), time.Second*10)
+	wd.WaitWithTimeout(ElementIsLocated(selenium.ByID, "wnPUne N0PJ8e"), time.Second*30)
 
 	// Number of people in the call
 	prevNum := 0
