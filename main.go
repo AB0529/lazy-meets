@@ -1,6 +1,3 @@
-// TODO:
-// - Handle breakout rooms
-
 package main
 
 import (
@@ -157,12 +154,9 @@ func StartMeet(class Class, config Config) {
 	time.Sleep(5 * time.Second)
 	// Find and click the mic off button and camera button
 	btns, err := wd.FindElements(selenium.ByXPATH, "//div[@data-is-muted='false']")
-	if err == nil {
-		for _, b := range btns {
-			b.Click()
-			// Wait half a second between clicks, just in case
-			time.Sleep(500 * time.Millisecond)
-		}
+	if err == nil && len(btns) >= 4 {
+		btns[0].Click()
+		btns[3].Click()
 	}
 
 	// Find Join button
@@ -184,6 +178,7 @@ func StartMeet(class Class, config Config) {
 
 		oldLeaveCondition := config.Leave
 		// Detect if a breakout room popup started
+		// TODO: Move this to ended loop
 		go func() {
 			wd.Wait(func() selenium.Condition {
 				// Join the breakout room
@@ -196,9 +191,9 @@ func StartMeet(class Class, config Config) {
 					time.Sleep(time.Second * 2)
 					// Ignore leave condition until breakout room has ended
 					config.Leave = -1
-					Info("A " + Red("breakout") + " room has started")
+					Info(Green("Started ") + "breakout room")
 
-					return true, nil
+					return false, nil
 				}
 			}())
 		}()
@@ -210,8 +205,9 @@ func StartMeet(class Class, config Config) {
 				// If the current url has "&born&hs" we know it ended
 				if strings.Contains(curURL, "&born&hs") {
 					config.Leave = oldLeaveCondition
-					Info("A " + Red("breakout") + " room has ended")
-					break
+					Info(Red("Ended ") + "breakout room")
+					time.Sleep(time.Second * 2)
+					continue
 				}
 
 				time.Sleep(time.Millisecond * 500)
@@ -227,7 +223,11 @@ func StartMeet(class Class, config Config) {
 			}
 
 			// Number of people in call
-			numElem, _ := wd.FindElement(selenium.ByXPATH, "//span[@class='wnPUne N0PJ8e']")
+			numElem, err := wd.FindElement(selenium.ByXPATH, "//span[@class='wnPUne N0PJ8e']")
+			if err != nil {
+				time.Sleep(time.Second * 3)
+				continue
+			}
 			numStr, _ := numElem.Text()
 
 			// Look for other number element
@@ -279,10 +279,10 @@ func CheckSchedule(now time.Time, config Config, schedule Schedule) bool {
 			continue
 		}
 
-		// TODO: Use proper time compare instead of this
 		jtH, jtM, _ := class.JoinTime.Clock()
 		nH, nM, _ := now.Clock()
 
+		// TODO:  properly add skip time to a timestamp
 		if jtH == nH && nM-jtM <= config.Skip && nM-jtM >= 0 {
 			wg.Add(1)
 			go StartMeet(class, config)
