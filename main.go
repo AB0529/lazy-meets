@@ -197,6 +197,20 @@ func StartMeet(class Class, config Config) {
 				}
 			}())
 		}()
+		// Breakout room has ended popup
+		go func() {
+			wd.Wait(func() selenium.Condition {
+				return func(wd selenium.WebDriver) (bool, error) {
+					btn, err := wd.FindElement(selenium.ByCSSSelector, ".M9Bg4d")
+					if err != nil {
+						return false, nil
+					}
+					btn.Click()
+
+					return false, nil
+				}
+			}())
+		}()
 
 		go func() {
 			for {
@@ -232,7 +246,11 @@ func StartMeet(class Class, config Config) {
 
 			// Look for other number element
 			if numStr == "" {
-				numElem, _ = wd.FindElement(selenium.ByXPATH, "//span[@class='rua5Nb']")
+				numElem, err = wd.FindElement(selenium.ByXPATH, "//span[@class='rua5Nb']")
+				if err != nil {
+					time.Sleep(time.Second * 3)
+					continue
+				}
 				numStr, _ = numElem.Text()
 			}
 
