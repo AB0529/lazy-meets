@@ -144,13 +144,13 @@ func StartMeet(class Class, config Config) {
 	btn.Click()
 	time.Sleep(3 * time.Second)
 
-	title, _ := wd.Title()
+	// title, _ := wd.Title()
 	// If the title is not the inbox, the password was wrong
-	if !strings.Contains(strings.ToLower(title), "inbox") {
-		Error("Your password is invalid")
-		wd.Quit()
-		os.Exit(1)
-	}
+	// if !strings.Contains(strings.ToLower(title), "inbox") {
+	// 	Error("Your password is invalid")
+	// 	wd.Quit()
+	// 	os.Exit(1)
+	// }
 
 	// Goto the Google meets
 	wd.Get(class.URI.String())
@@ -174,19 +174,6 @@ func StartMeet(class Class, config Config) {
 	// Wait until class has been entered
 	wd.WaitWithTimeout(ElementIsLocated(selenium.ByID, "wnPUne N0PJ8e"), time.Second*10)
 
-	// Detect if a breakout room popup started
-
-	// TODO: Join breakout
-
-	// Ignore leave condition when in breakout room
-	// oldLeaveCondition := config.Leave
-	// config.Leave = 999
-
-	// TODO: Detect when breakout has ended
-
-	// Reset leave condition when breakout has ended
-	// config.Leave = oldLeaveCondition
-
 	// Number of people in the call
 	prevNum := 0
 	numReg, _ := regexp.Compile("\\d+")
@@ -195,7 +182,50 @@ func StartMeet(class Class, config Config) {
 	go func() {
 		defer wg.Done()
 
+		oldLeaveCondition := config.Leave
+		// Detect if a breakout room popup started
+		go func() {
+			wd.Wait(func() selenium.Condition {
+				// Join the breakout room
+				return func(wd selenium.WebDriver) (bool, error) {
+					btn, err := wd.FindElement(selenium.ByCSSSelector, ".XfpsVe > div:nth-child(2) > span:nth-child(3) > span:nth-child(1)")
+					if err != nil {
+						return false, nil
+					}
+					btn.Click()
+					time.Sleep(time.Second * 2)
+					// Ignore leave condition until breakout room has ended
+					config.Leave = -1
+					Info("A " + Red("breakout") + " room has started")
+
+					return true, nil
+				}
+			}())
+		}()
+
+		go func() {
+			for {
+				curURL, _ := wd.CurrentURL()
+
+				// If the current url has "&born&hs" we know it ended
+				if strings.Contains(curURL, "&born&hs") {
+					config.Leave = oldLeaveCondition
+					Info("A " + Red("breakout") + " room has ended")
+					break
+				}
+
+				time.Sleep(time.Millisecond * 500)
+			}
+		}()
+
 		for {
+			// Get current URL, and make sure it's not still joining breakout room
+			curURL, _ := wd.CurrentURL()
+			if strings.Contains(curURL, "&born=Breakout") {
+				time.Sleep(time.Second * 3)
+				continue
+			}
+
 			// Number of people in call
 			numElem, _ := wd.FindElement(selenium.ByXPATH, "//span[@class='wnPUne N0PJ8e']")
 			numStr, _ := numElem.Text()
@@ -213,14 +243,15 @@ func StartMeet(class Class, config Config) {
 				Info("There are " + Yellow(num) + " people in the call")
 				prevNum = num
 			}
-			if num < config.Leave {
+
+			if config.Leave > num {
 				Info("Leaving class " + Yellow(class.Name))
 				wd.Quit()
 				break
 			}
 
-			// Check every 5 seconds
-			time.Sleep(time.Second * 5)
+			// Check every 3 seconds
+			time.Sleep(time.Second * 3)
 		}
 	}()
 
