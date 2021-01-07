@@ -173,7 +173,7 @@ func StartMeet(class Class, config Config) {
 	}
 	btn.Click()
 	// Wait until class has been entered
-	wd.WaitWithTimeout(ElementIsLocated(selenium.ByID, "wnPUne N0PJ8e"), time.Second*30)
+	wd.Wait(ElementIsLocated(selenium.ByXPATH, "//span[@class='wnPUne N0PJ8e']"))
 
 	// Number of people in the call
 	prevNum := 0
@@ -183,50 +183,39 @@ func StartMeet(class Class, config Config) {
 	go func() {
 		defer wg.Done()
 
+		// Keep track of the old leave condition to restore later
 		oldLeaveCondition := config.Leave
-		// Detect if a breakout room popup started
-		// TODO: Move this to ended loop
-		go func() {
-			wd.Wait(func() selenium.Condition {
-				// Join the breakout room
-				return func(wd selenium.WebDriver) (bool, error) {
-					btn, err := wd.FindElement(selenium.ByCSSSelector, ".XfpsVe > div:nth-child(2) > span:nth-child(3) > span:nth-child(1)")
-					if err != nil {
-						return false, nil
-					}
-					btn.Click()
-					time.Sleep(time.Second * 2)
-					// Ignore leave condition until breakout room has ended
-					config.Leave = -1
-					Info(Green("Started ") + "breakout room")
 
-					return false, nil
-				}
-			}())
-		}()
-		// Breakout room has ended popup
-		go func() {
-			wd.Wait(func() selenium.Condition {
-				return func(wd selenium.WebDriver) (bool, error) {
-					btn, err := wd.FindElement(selenium.ByCSSSelector, ".M9Bg4d")
-					if err != nil {
-						return false, nil
-					}
-					btn.Click()
-
-					return false, nil
-				}
-			}())
-		}()
-
+		// Join and leave breakout rooms
 		go func() {
 			for {
 				curURL, _ := wd.CurrentURL()
+
+				// Find "Join" breakout popup and join it
+				joinBtn, err := wd.FindElement(selenium.ByXPATH, "/html/body/div[1]/div[3]/div/div[2]/div[3]/div[2]/span/span")
+				// No error means it's appeared and we can click join
+				if err == nil {
+					joinBtn.Click()
+				}
+				// Same thing as above but for the leave breakout popup
+				leaveBtn, err := wd.FindElement(selenium.ByXPATH, "/html/body/div[1]/div[3]/div/div[2]/div[3]/div/span/span")
+				if err == nil {
+					leaveBtn.Click()
+				}
 
 				// If the current url has "&born&hs" we know it ended
 				if strings.Contains(curURL, "&born&hs") {
 					config.Leave = oldLeaveCondition
 					Info(Red("Ended ") + "breakout room")
+					time.Sleep(time.Second * 2)
+					continue
+				}
+
+				// If it has "&born=Breakout&" we know it started
+				if strings.Contains(curURL, "&born=Breakout") {
+					// Ignore leave condition until breakout room has ended
+					config.Leave = -1
+					Info(Green("Started ") + "breakout room")
 					time.Sleep(time.Second * 2)
 					continue
 				}
