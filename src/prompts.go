@@ -223,12 +223,11 @@ func IsWeekday(inp interface{}) error {
 	weekdayStr := strings.Split(inp.(string), " ")
 	// Loop through each and determin the validity
 	for _, w := range weekdayStr {
-		day, ok := Weekdays[strings.ToLower(w[:3])]
+		_, ok := Weekdays[strings.ToLower(w[:3])]
 
-		if ok {
-			return nil
+		if !ok {
+			return fmt.Errorf("invalid weekday %s", w)
 		}
-		return fmt.Errorf("invalid weekday %s", day)
 	}
 
 	return nil
