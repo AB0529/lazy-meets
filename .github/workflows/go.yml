@@ -25,4 +25,4 @@ jobs:
       run: go build -v -o lazy-meets ./src
 
     - name: Test
-      run: go test -v -o lazy-meets ./src
+      run: go test -v ./src
