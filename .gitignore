@@ -1,6 +1,6 @@
 *.log
 config.*
-schedule.*
+Schedules
 .DS_Store
 Vendors
 Releases

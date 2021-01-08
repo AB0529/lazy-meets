@@ -88,7 +88,7 @@ func Init() {
 		fmt.Printf("- %s at %s (%s)\n", prompter.Red.Sprint(c.Name), prompter.Cyan.Sprint(strings.Split(c.JoinTime.Format("2006-01-02 3:4pm"), " ")[1]), strings.TrimSpace(strings.Join(wds, " ")))
 	}
 
-	fmt.Printf("\n\n")
+	fmt.Println()
 	Info("Using schedule " + prompter.Green.Sprint(currentSched))
 
 	// Ask iniital question
@@ -441,6 +441,7 @@ func StartProgram() {
 	file, _ := ioutil.ReadFile("./config.yml")
 	yaml.Unmarshal(file, &config)
 
+	ClearScreen()
 	Info("Program started, will spring into action when class is ready!")
 
 	// Main loop
