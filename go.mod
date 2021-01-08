@@ -3,7 +3,7 @@ module github.com/AB0529/lazy-meets/src
 go 1.15
 
 require (
-	github.com/AB0529/prompter v0.0.0-20201220165556-04572ef1bfbd
+	github.com/AB0529/prompter v0.0.0-20210108054917-32a2303bad37
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807 // indirect
 	github.com/gookit/color v1.3.6 // indirect
