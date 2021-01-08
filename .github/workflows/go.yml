@@ -19,8 +19,7 @@ jobs:
     
     - name: Install dependencies
       run:
-        cd src
-        go get
+        cd src && go get
         
     - name: Build
       run: go build -v ./...
