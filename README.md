@@ -1,4 +1,5 @@
-# Lazy-Meets 
+# Lazy-Meets
+![Go](https://github.com/AB0529/lazy-meets/workflows/Go/badge.svg)
 
 Are you so lazy you can't even go to online classes? Well fret no more!
 

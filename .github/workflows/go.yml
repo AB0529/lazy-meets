@@ -19,13 +19,10 @@ jobs:
     
     - name: Install dependencies
       run:
-        go version
-        go get github.com/tebeka/selenium 
-        go get gopkg.in/yaml.v2 
-        go get github.com/AB0529/prompter
+        cd src && go get
         
     - name: Build
-      run: go build -v ./...
+      run: go build -v -o lazy-meets ./src
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v ./src
