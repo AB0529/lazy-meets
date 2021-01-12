@@ -441,6 +441,17 @@ func StartProgram() {
 	ClearScreen()
 	Info("Program started, will spring into action when class is ready!")
 
+	weekday := time.Now().Weekday()
+
+	// Make sure there's a calss for the weekday and the time is right
+	for _, class := range *Sched {
+		if !contains(class.Weekdays, weekday) {
+			continue
+		}
+
+		fmt.Printf("- %s at %s\n", prompter.Red.Sprint(class.Name), prompter.Cyan.Sprint(strings.Split(class.JoinTime.Format("2006-01-02 3:4pm"), " ")[1]))
+	}
+
 	// Main loop
 	for {
 		now := time.Now()
