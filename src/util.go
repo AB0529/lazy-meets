@@ -276,14 +276,6 @@ func StartMeet(class *Class, config *Config) {
 	btn.Click()
 	time.Sleep(3 * time.Second)
 
-	// title, _ := wd.Title()
-	// If the title is not the inbox, the password was wrong
-	// if !strings.Contains(strings.ToLower(title), "inbox") {
-	// 	Error("Your password is invalid")
-	// 	wd.Quit()
-	// 	os.Exit(1)
-	// }
-
 	// Goto the Google meets
 	wd.Get(class.MeetURL.String())
 	time.Sleep(5 * time.Second)
@@ -311,108 +303,90 @@ func StartMeet(class *Class, config *Config) {
 	prevNum := 0
 	numReg, _ := regexp.Compile("\\d+")
 
-	wg.Add(2)
+	// Keep track of the old leave condition to restore later
+	oldLeaveCondition := config.Leave
+
+	// Join and leave breakout rooms
 	go func() {
-		defer wg.Done()
-
-		// Keep track of the old leave condition to restore later
-		oldLeaveCondition := config.Leave
-
-		// Join and leave breakout rooms
-		go func() {
-			for {
-				curURL, _ := wd.CurrentURL()
-
-				// Find "Join" breakout popup and join it
-				joinBtn, err := wd.FindElement(selenium.ByXPATH, "/html/body/div[1]/div[3]/div/div[2]/div[3]/div[2]/span/span")
-				// No error means it's appeared and we can click join
-				if err == nil {
-					joinBtn.Click()
-				}
-				// Same thing as above but for the leave breakout popup
-				leaveBtn, err := wd.FindElement(selenium.ByXPATH, "/html/body/div[1]/div[3]/div/div[2]/div[3]/div/span/span")
-				if err == nil {
-					leaveBtn.Click()
-				}
-
-				// If the current url has "&born&hs" we know it ended
-				if strings.Contains(curURL, "&born&hs") {
-					config.Leave = oldLeaveCondition
-					Info(prompter.Red.Sprint("Ended ") + "breakout room")
-					time.Sleep(time.Second * 2)
-					continue
-				}
-
-				// If it has "&born=Breakout&" we know it started
-				if strings.Contains(curURL, "&born=Breakout") {
-					// Ignore leave condition until breakout room has ended
-					config.Leave = -1
-					Info(prompter.Green.Sprint("Started ") + "breakout room")
-					time.Sleep(time.Second * 2)
-					continue
-				}
-
-				time.Sleep(time.Millisecond * 500)
-			}
-		}()
-
 		for {
-			// Get current URL, and make sure it's not still joining breakout room
 			curURL, _ := wd.CurrentURL()
-			if strings.Contains(curURL, "&born=Breakout") {
-				time.Sleep(time.Second * 3)
+
+			// Find "Join" breakout popup and join it
+			joinBtn, err := wd.FindElement(selenium.ByXPATH, "/html/body/div[1]/div[3]/div/div[2]/div[3]/div[2]/span/span")
+			// No error means it's appeared and we can click join
+			if err == nil {
+				joinBtn.Click()
+			}
+			// Same thing as above but for the leave breakout popup
+			leaveBtn, err := wd.FindElement(selenium.ByXPATH, "/html/body/div[1]/div[3]/div/div[2]/div[3]/div/span/span")
+			if err == nil {
+				leaveBtn.Click()
+			}
+
+			// If the current url has "&born&hs" we know it ended
+			if strings.Contains(curURL, "&born&hs") {
+				config.Leave = oldLeaveCondition
+				Info(prompter.Red.Sprint("Ended ") + "breakout room")
+				time.Sleep(time.Second * 2)
 				continue
 			}
 
-			// Number of people in call
-			numElem, err := wd.FindElement(selenium.ByXPATH, "//span[@class='wnPUne N0PJ8e']")
+			// If it has "&born=Breakout&" we know it started
+			if strings.Contains(curURL, "&born=Breakout") {
+				// Ignore leave condition until breakout room has ended
+				config.Leave = -1
+				Info(prompter.Green.Sprint("Started ") + "breakout room")
+				time.Sleep(time.Second * 2)
+				continue
+			}
+
+			time.Sleep(time.Millisecond * 500)
+		}
+	}()
+
+	for {
+		// Get current URL, and make sure it's not still joining breakout room
+		curURL, _ := wd.CurrentURL()
+		if strings.Contains(curURL, "&born=Breakout") {
+			time.Sleep(time.Second * 3)
+			continue
+		}
+
+		// Number of people in call
+		numElem, err := wd.FindElement(selenium.ByXPATH, "//span[@class='wnPUne N0PJ8e']")
+		if err != nil {
+			time.Sleep(time.Second * 3)
+			continue
+		}
+		numStr, _ := numElem.Text()
+
+		// Look for other number element
+		if numStr == "" {
+			numElem, err = wd.FindElement(selenium.ByXPATH, "//span[@class='rua5Nb']")
 			if err != nil {
 				time.Sleep(time.Second * 3)
 				continue
 			}
-			numStr, _ := numElem.Text()
-
-			// Look for other number element
-			if numStr == "" {
-				numElem, err = wd.FindElement(selenium.ByXPATH, "//span[@class='rua5Nb']")
-				if err != nil {
-					time.Sleep(time.Second * 3)
-					continue
-				}
-				numStr, _ = numElem.Text()
-			}
-
-			// Convert to int
-			num, _ := strconv.Atoi(numReg.FindString(numStr))
-
-			if num != prevNum {
-				Info("There are " + prompter.Yellow.Sprint(num) + " people in the call")
-				prevNum = num
-			}
-
-			if config.Leave > num {
-				Info("Leaving class " + prompter.Yellow.Sprint(class.Name))
-				wd.Quit()
-				break
-			}
-
-			// Check every 3 seconds
-			time.Sleep(time.Second * 3)
+			numStr, _ = numElem.Text()
 		}
-	}()
 
-	wg.Wait()
-	defer wg.Done()
-}
+		// Convert to int
+		num, _ := strconv.Atoi(numReg.FindString(numStr))
 
-func inTimeSpan(start, end, check time.Time) bool {
-	if start.Before(end) {
-		return !check.Before(start) && !check.After(end)
+		if num != prevNum {
+			Info("There are " + prompter.Yellow.Sprint(num) + " people in the call")
+			prevNum = num
+		}
+
+		if config.Leave > num {
+			Info("Leaving class " + prompter.Yellow.Sprint(class.Name))
+			break
+		}
+
+		// Check every 3 seconds
+		time.Sleep(time.Second * 3)
 	}
-	if start.Equal(end) {
-		return check.Equal(start)
-	}
-	return !start.After(check) || !end.Before(check)
+	wg.Done()
 }
 
 // CheckSchedule will check the schedule for right time
