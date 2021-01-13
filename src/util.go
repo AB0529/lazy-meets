@@ -405,6 +405,16 @@ func StartMeet(class *Class, config *Config) {
 	defer wg.Done()
 }
 
+func inTimeSpan(start, end, check time.Time) bool {
+	if start.Before(end) {
+		return !check.Before(start) && !check.After(end)
+	}
+	if start.Equal(end) {
+		return check.Equal(start)
+	}
+	return !start.After(check) || !end.Before(check)
+}
+
 // CheckSchedule will check the schedule for right time
 func CheckSchedule(now time.Time, config *Config, schedule *Schedule) bool {
 	// Get the current weekday
@@ -416,12 +426,10 @@ func CheckSchedule(now time.Time, config *Config, schedule *Schedule) bool {
 			continue
 		}
 
-		// Add skip time to join time
 		jtH, jtM, _ := class.JoinTime.Clock()
-		ntH, ntM, _ := now.Clock()
-		st := class.JoinTime.Add(time.Minute * time.Duration(config.Skip+1))
+		nH, nM, _ := now.Clock()
 
-		if (jtH == ntH && jtM == ntM) || now.Before(st) {
+		if jtH == nH && nM-jtM <= config.Skip && nM-jtM >= 0 {
 			wg.Add(1)
 			go StartMeet(class, config)
 			wg.Wait()
@@ -456,7 +464,9 @@ func StartProgram() {
 	// Main loop
 	for {
 		now := time.Now()
-		CheckSchedule(now, config, Sched)
+		CheckSchedule(
+			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, now.Location()),
+			config, Sched)
 		// Wait 30 seconds
 		time.Sleep(30 * time.Second)
 	}
