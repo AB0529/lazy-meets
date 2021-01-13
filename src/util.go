@@ -218,7 +218,7 @@ func ElementIsLocated(by, selector string) selenium.Condition {
 
 func contains(s []*time.Weekday, e time.Weekday) bool {
 	for _, a := range s {
-		if (*a) == e {
+		if *a == e {
 			return true
 		}
 	}
@@ -416,11 +416,12 @@ func CheckSchedule(now time.Time, config *Config, schedule *Schedule) bool {
 			continue
 		}
 
+		// Add skip time to join time
 		jtH, jtM, _ := class.JoinTime.Clock()
-		nH, nM, _ := now.Clock()
+		ntH, ntM, _ := now.Clock()
+		st := class.JoinTime.Add(time.Minute * time.Duration(config.Skip+1))
 
-		// TODO:  properly add skip time to a timestamp
-		if jtH == nH && nM-jtM <= config.Skip && nM-jtM >= 0 {
+		if (jtH == ntH && jtM == ntM) || now.Before(st) {
 			wg.Add(1)
 			go StartMeet(class, config)
 			wg.Wait()
