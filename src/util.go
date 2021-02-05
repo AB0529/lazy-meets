@@ -327,7 +327,7 @@ func StartMeet(class *Class, config *Config) {
 			if strings.Contains(curURL, "&born&hs") {
 				config.Leave = oldLeaveCondition
 				Info(prompter.Red.Sprint("Ended ") + "breakout room")
-				time.Sleep(time.Second * 2)
+				time.Sleep(time.Minute)
 				continue
 			}
 
