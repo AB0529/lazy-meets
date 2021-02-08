@@ -351,7 +351,13 @@ func StartMeet(class *Class, config *Config) {
 			time.Sleep(time.Second * 3)
 			continue
 		}
-
+        // Handle 'removed from meet'
+        _, rmErr := wd.FindElement(selenium.ByXPATH, "//div[contains(text(), \"You've been removed from the meeting\")]")
+        if rmErr == nil {
+            // End the meet if been removed
+            Info("Removed, leaving class " + prompter.Yellow.Sprint(class.Name))
+            break
+        }
 		// Number of people in call
 		numElem, err := wd.FindElement(selenium.ByXPATH, "//span[@class='wnPUne N0PJ8e']")
 		if err != nil {
