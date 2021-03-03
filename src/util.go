@@ -292,6 +292,7 @@ func StartMeet(class *Class, config *Config) {
 		btn, err = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Ask')]")
 		if err != nil {
 			Error("Could not join meet")
+			wd.Quit()
 			return
 		}
 	}
