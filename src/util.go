@@ -180,7 +180,7 @@ func Init() {
 		break
 	// ----------------------------------------
 	default:
-		StartProgram()
+		os.Exit(0)
 	}
 }
 

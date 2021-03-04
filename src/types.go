@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-// Config the repersentation of a config file
+// Config the representation of a config file
 type Config struct {
-	// Leave the number of people left which determins when to leave
+	// Leave the number of people left which determines when to leave
 	Leave int
 	// Skip the window of time between the start of the class, and current time to join
 	Skip int
@@ -17,7 +17,7 @@ type Config struct {
 	Password string
 }
 
-// Class the repersentation of a class
+// Class the representation of a class
 type Class struct {
 	// Name a friendly name for the class
 	Name string
@@ -29,7 +29,7 @@ type Class struct {
 	JoinTime *time.Time
 }
 
-// Schedule the repersentation of a created schedule
+// Schedule the representation of a created schedule
 type Schedule []*Class
 
 type GHAuthor struct {

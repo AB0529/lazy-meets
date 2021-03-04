@@ -17,8 +17,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	"github.com/AB0529/prompter"
 )
 
 // TODO: Eventually have these links be auto-pulled
@@ -52,7 +50,7 @@ func IsDirEmpty(name string) (bool, error) {
 
 // DownloadFile will download a file off a link
 func DownloadFile(dest string, url *url.URL) error {
-	Info("Downloading for platform " + prompter.Yellow.Sprint(strings.ToUpper(runtime.GOOS)))
+	Info("Downloading for platform " + Yellow.Sprint(strings.ToUpper(runtime.GOOS)))
 
 	// Get the file data
 	resp, err := http.Get(url.String())
@@ -270,7 +268,7 @@ func doUpdate(resp GHResp) error {
 	defer r.Body.Close()
 	err = update.Apply(r.Body, update.Options{})
 
-	Info("Done, you are now on version " + prompter.Green.Sprint(resp.TagName) + " please restart program!")
+	Info("Done, you are now on version " + Green.Sprint(resp.TagName) + " please restart program!")
 
 	return err
 }
@@ -298,7 +296,7 @@ func Update() {
 		// Check if Firefox is installed
 		_, err := os.Stat("C:\\Program Files\\Mozilla Firefox\\Firefox.exe")
 		if err != nil {
-			Error(prompter.Yellow.Sprint("Firefox not found ") + "make sure your Firefox installation is located at " + prompter.Red.Sprint("C:\\Program Files\\Mozilla Firefox\\Firefox.exe"))
+			Error(Yellow.Sprint("Firefox not found ") + "make sure your Firefox installation is located at " + Red.Sprint("C:\\Program Files\\Mozilla Firefox\\Firefox.exe"))
 			os.Exit(1)
 		}
 		Firefox = "C:\\Program Files\\Mozilla Firefox\\Firefox.exe"
@@ -312,7 +310,7 @@ func Update() {
 		// Check if Firefox is installed
 		_, err := os.Stat("/Applications/Firefox.app")
 		if err != nil {
-			Error(prompter.Yellow.Sprint("Firefox not found ") + "make sure your Firefox installation is located at " + prompter.Red.Sprint("/Applications/Firefox.app"))
+			Error(Yellow.Sprint("Firefox not found ") + "make sure your Firefox installation is located at " + Red.Sprint("/Applications/Firefox.app"))
 			os.Exit(1)
 		}
 		Firefox = "/Applications/Firefox.app"
@@ -328,13 +326,13 @@ func Update() {
 		// Check if Firefox is installed
 		_, err := os.Stat("/usr/bin/firefox")
 		if err != nil {
-			Error(prompter.Yellow.Sprint("Firefox not found ") + "make sure your Firefox installation is located at " + prompter.Red.Sprint("/usr/bin/firefox"))
+			Error(Yellow.Sprint("Firefox not found ") + "make sure your Firefox installation is located at " + Red.Sprint("/usr/bin/firefox"))
 			os.Exit(1)
 		}
 		Firefox = "/usr/bin/firefox"
 		break
 	default:
-		Error(prompter.Yellow.Sprint(runtime.GOOS) + " is not a supported platform")
+		Error(Yellow.Sprint(runtime.GOOS) + " is not a supported platform")
 		os.Exit(1)
 	}
 
@@ -389,9 +387,9 @@ func Update() {
 			os.Exit(1)
 		}
 
-		Info("Version " + prompter.Red.Sprint(string(dat)) + " is out of date!")
+		Info("Version " + Red.Sprint(string(dat)) + " is out of date!")
 		return
 	}
 
-	Info("Version " + prompter.Green.Sprint(resp.TagName) + " is up to date!")
+	Info("Version " + Green.Sprint(resp.TagName) + " is up to date!")
 }
