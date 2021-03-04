@@ -53,12 +53,10 @@ There are binary releases available, but if you want to build from a source, her
 ## Requirements
 * Go version 1.15 or higher ([Download](https://golang.org/dl/))
 ## Dependencies
-This only has a four dependencies `selenium`, `yaml`, `prompter`, and `go-update`. To install them:
 ```sh
-go get github.com/tebeka/selenium 
-go get gopkg.in/yaml.v2 
-go get github.com/AB0529/prompter
-go get github.com/inconshreveable/go-update
+git clone https://github.com/AB0529/lazy-meets
+cd lazy-meets/src
+go get .
 ```
 ## Running
 To run the program directly with Go:
