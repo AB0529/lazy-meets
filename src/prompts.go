@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/AB0529/prompter"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/gookit/color"
 	"io/ioutil"
@@ -170,7 +169,7 @@ func ScheduleQuestions() *Schedule {
 	// Create the new classes
 	schedule := Schedule{}
 	for i := 0; i < classCount; i++ {
-		Info("Enter details for class " + prompter.Green.Sprint(i+1))
+		Info("Enter details for class " + Green.Sprint(i+1))
 		class := ClassQuestions()
 		schedule = append(schedule, class)
 	}
@@ -214,11 +213,11 @@ func SelectSchedule(overrwrite bool) string {
 // InitalQuestions the question in which what happens with the program
 func InitalQuestions() string {
 	options := []string{
-		prompter.Purple.Sprint("Start Program"),
+		Purple.Sprint("Start Program"),
 		"Select or Create Schedule",
-		prompter.Cyan.Sprint("Edit Class"),
-		prompter.Green.Sprint("Add Class"),
-		prompter.Red.Sprint("Delete Class"),
+		Cyan.Sprint("Edit Class"),
+		Green.Sprint("Add Class"),
+		Red.Sprint("Delete Class"),
 	}
 
 	initalQuestions :=[]*survey.Question{
