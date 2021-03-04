@@ -347,7 +347,7 @@ func Update() {
 	// First time run
 	if _, err := os.Stat(".update_cache"); err != nil {
 		// Cache version number for first time run
-		err = os.WriteFile(".update_cache", []byte(resp.TagName), 0666)
+		err = ioutil.WriteFile(".update_cache", []byte(resp.TagName), 0666)
 		if err != nil {
 			Error("error writing cache file")
 			os.Exit(1)
@@ -380,7 +380,7 @@ func Update() {
 				os.Exit(1)
 			}
 			// Update cache file
-			err = os.WriteFile(".update_cache", []byte(resp.TagName), 0666)
+			err = ioutil.WriteFile(".update_cache", []byte(resp.TagName), 0666)
 			if err != nil {
 				Error("error writing cache file")
 				os.Exit(1)
