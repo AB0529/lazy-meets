@@ -3,13 +3,15 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/AB0529/prompter"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/gookit/color"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/AB0529/prompter"
 )
 
 var (
@@ -23,16 +25,31 @@ var (
 		"fri": time.Friday,
 		"sat": time.Saturday,
 	}
+	// Red color red
+	Red = color.Red
+	// Blue color blue
+	Blue = color.Blue
+	// Cyan color cyan
+	Cyan = color.Cyan
+	// Purple color purple
+	Purple = color.Magenta
+	// Green color green
+	Green = color.LightGreen
+	// Yellow color yellow
+	Yellow = color.Yellow
+	// White color white
+	White = color.White
+
 )
 
 // Info prints an info prompt
 func Info(i ...interface{}) {
-	fmt.Printf("[%s] - %s\n", prompter.Yellow.Sprint("INFO"), i)
+	fmt.Printf("[%s] - %s\n", Yellow.Sprint("INFO"), i)
 }
 
 // Error prints an error prompt
 func Error(msg ...interface{}) {
-	fmt.Printf("[%s] - %s\n", prompter.Red.Sprint("ERROR"), msg)
+	fmt.Printf("[%s] - %s\n", Red.Sprint("ERROR"), msg)
 }
 
 // ------------------------------------------------------
@@ -41,80 +58,71 @@ func Error(msg ...interface{}) {
 
 // UpdateQuestion asks whether user wants to update or not
 func UpdateQuestion() bool {
-	updateQuestion := []interface{}{
-		&prompter.Boolean{
-			Name:       "update",
-			Message:    "Update found, would you like to update?",
-			Validators: []prompter.Validator{prompter.Required},
-		},
-	}
-	answers := struct { Update bool }{}
-	prompter.Ask(&prompter.Prompt{Types: updateQuestion}, &answers)
+	var answer bool
 
-	return answers.Update
+	updateQuestion := &survey.Confirm{
+		Message:  "Update found, would you like to update?",
+		Default:  false,
+		Help:     "",
+	}
+
+	survey.AskOne(updateQuestion, &answer)
+	return answer
 }
 
 // ConfigQuestions the questions to be asked when creating a new config file
 func ConfigQuestions() *Config {
-	configQuestions := []interface{}{
-		&prompter.Input{
-			Message:    "The amount of people left before you leave",
-			Name:       "leave",
-			Validators: []prompter.Validator{prompter.Required, prompter.IsNumeric, IsOverZero},
+	configQuestions := []*survey.Question{
+		{
+			Name: "leave",
+			Prompt: &survey.Input{Message: "The amount of people left before you leave"},
+			Validate: IsOverZero,
 		},
-		&prompter.Input{
-			Message:    "The window of time to join a class after the inital time (minutes)",
-			Name:       "skip",
-			Validators: []prompter.Validator{prompter.Required, prompter.IsNumeric, IsOverZero},
+		{
+			Name: "skip",
+			Prompt: &survey.Input{Message: "The window of time to join a class after the initial time (minutes)"},
 		},
-		&prompter.Input{
-			Message:    "The email used to login",
-			Name:       "email",
-			Validators: []prompter.Validator{prompter.Required},
+		{
+			Name: "email",
+			Prompt: &survey.Input{Message: "The email used to login"},
 		},
-		&prompter.Password{
-			Message:    "The password used to login",
-			Name:       "password",
-			Validators: []prompter.Validator{prompter.Required},
+		{
+			Name: "password",
+			Prompt: &survey.Password{Message: "The password for that email"},
 		},
 	}
 
 	// Ask the question and create a config
-	answers := struct {
-		Leave    int
-		Skip     int
-		Email    string
-		Password string
-	}{}
-	prompter.Ask(&prompter.Prompt{Types: configQuestions}, &answers)
+	var answers *Config
+	survey.Ask(configQuestions, &answers, survey.WithValidator(survey.Required))
 
-	return &Config{Leave: answers.Leave, Skip: answers.Skip, Email: answers.Email, Password: answers.Password}
+	return answers
 }
 
 // ClassQuestions the questions to be asked when creating a new class
 func ClassQuestions() *Class {
-	classQuestions := []interface{}{
-		&prompter.Input{
-			Message:    "A friendly name for the class",
-			Name:       "name",
-			Validators: []prompter.Validator{prompter.Required},
+	classQuestions := []*survey.Question{
+		{
+			Name: "name",
+			Prompt: &survey.Input{Message: "A friendly name for the class"},
 		},
-		&prompter.Input{
-			Message:    "The weekdays the class takes place (seperate by space)",
-			Name:       "weekdays",
-			Validators: []prompter.Validator{prompter.Required, IsWeekday},
+		{
+			Name: "weekdays",
+			Prompt: &survey.Input{Message: "The weekdays the class takes place (separated by space)"},
+			Validate: IsWeekday,
 		},
-		&prompter.Input{
-			Message:    "The time when the class starts (ex. 7:01am)",
-			Name:       "time",
-			Validators: []prompter.Validator{prompter.Required, IsValidTime},
+		{
+			Name: "time",
+			Prompt: &survey.Input{Message: "The time the class starts (ex. 7:01am)"},
+			Validate: IsValidTime,
 		},
-		&prompter.Input{
-			Message:    "The Google Meets URL needed to join",
-			Name:       "url",
-			Validators: []prompter.Validator{prompter.Required, prompter.IsURL},
+		{
+			Name: "url",
+			Prompt: &survey.Input{Message: "The Google Meets URL needed to join"},
+			Validate: IsURL,
 		},
 	}
+	
 	// Ask question and get the answer
 	answers := struct {
 		Name     string
@@ -122,7 +130,7 @@ func ClassQuestions() *Class {
 		URL      string
 		Time     string
 	}{}
-	prompter.Ask(&prompter.Prompt{Types: classQuestions}, &answers)
+	survey.Ask(classQuestions, &answers, survey.WithValidator(survey.Required))
 	class := &Class{
 		Name: answers.Name,
 	}
@@ -136,11 +144,11 @@ func ClassQuestions() *Class {
 
 	timeArr := strings.Split(answers.Time, ":")
 	now := time.Now().Local()
-	time, _ := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%s %s:%s", now.Format("01/02/2006"), timeArr[0], timeArr[1]))
+	parsedTime, _ := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%s %s:%s", now.Format("01/02/2006"), timeArr[0], timeArr[1]))
 
-	class.JoinTime = &time
-	url, _ := url.ParseRequestURI(answers.URL)
-	class.MeetURL = url
+	class.JoinTime = &parsedTime
+	parsedURL, _ := url.ParseRequestURI(answers.URL)
+	class.MeetURL = parsedURL
 
 	return class
 }
@@ -148,18 +156,20 @@ func ClassQuestions() *Class {
 // ScheduleQuestions the question to be asked when creating a new schedule file
 func ScheduleQuestions() *Schedule {
 	ClearScreen()
-	scheduleQuestions := []interface{}{
-		&prompter.Input{
-			Message:    "How many total classes do you want to add?",
-			Name:       "classCount",
-			Validators: []prompter.Validator{prompter.Required, prompter.IsNumeric, IsOverZero},
+	scheduleQuestion := []*survey.Question{
+		{
+			Name: "classCount",
+			Prompt: &survey.Input{Message: "How many total classes do you want to add?"},
+			Validate: IsOverZero,
 		},
 	}
-	answers := struct{ ClassCount int }{}
-	prompter.Ask(&prompter.Prompt{Types: scheduleQuestions}, &answers)
+
+	var classCount int
+	survey.Ask(scheduleQuestion, &classCount, survey.WithValidator(survey.Required))
+
 	// Create the new classes
 	schedule := Schedule{}
-	for i := 0; i < answers.ClassCount; i++ {
+	for i := 0; i < classCount; i++ {
 		Info("Enter details for class " + prompter.Green.Sprint(i+1))
 		class := ClassQuestions()
 		schedule = append(schedule, class)
@@ -182,39 +192,49 @@ func SelectSchedule(overrwrite bool) string {
 		scheduleFiles = append([]string{f.Name()}, scheduleFiles...)
 	}
 
-	selectSchedule := []interface{}{
-		&prompter.Multiselect{
-			Name:    "schedule",
-			Message: "Which schedule do you want to use?",
-			Options: scheduleFiles,
+	selectSchedule := []*survey.Question{
+		{
+			Name: "schedule",
+			Prompt:  &survey.Select{
+				Message: "Which schedule do you want to use?",
+				Options: scheduleFiles,
+			},
+			Validate: survey.Required,
 		},
 	}
-	answer := map[string]interface{}{}
-	prompter.Ask(&prompter.Prompt{Types: selectSchedule}, &answer)
+	var schedule string
+	err := survey.Ask(selectSchedule, &schedule)
+	if err != nil {
+		os.Exit(0)
+	}
 
-	return answer["schedule"].(string)
+	return schedule
 }
 
 // InitalQuestions the question in which what happens with the program
 func InitalQuestions() string {
 	options := []string{
-		prompter.Red.Sprint("Delete Class"),
-		prompter.Green.Sprint("Add Class"),
-		prompter.Cyan.Sprint("Edit Class"),
-		"Select or Create Schedule",
 		prompter.Purple.Sprint("Start Program"),
+		"Select or Create Schedule",
+		prompter.Cyan.Sprint("Edit Class"),
+		prompter.Green.Sprint("Add Class"),
+		prompter.Red.Sprint("Delete Class"),
 	}
-	initalQuestions := []interface{}{
-		&prompter.Multiselect{
-			Message: "What do you want to do?",
-			Name:    "Choice",
-			Options: options,
+
+	initalQuestions :=[]*survey.Question{
+		{
+			Name: "choice",
+			Prompt: &survey.Select{
+				Message: "What do you want to do?",
+				Options: options,
+			},
 		},
 	}
-	ans := struct{ Choice string }{}
-	prompter.Ask(&prompter.Prompt{Types: initalQuestions}, &ans)
 
-	return ans.Choice
+	var choice string
+	survey.Ask(initalQuestions, &choice, survey.WithValidator(survey.Required))
+
+	return choice
 }
 
 // ------------------------------------------------------
@@ -260,6 +280,29 @@ func IsValidTime(inp interface{}) error {
 	_, err := time.Parse("01/02/2006 3:04pm", fmt.Sprintf("%s %s:%s", now.Format("01/02/2006"), timeArr[0], timeArr[1]))
 	if err != nil {
 		return fmt.Errorf("%s is not a valid time", inp.(string))
+	}
+
+	return nil
+}
+
+// IsNumeric makes sure the value is numeric
+func IsNumeric(val interface{}) error {
+	_, err := strconv.Atoi(val.(string))
+
+	// Handle non numeric
+	if err != nil {
+		return errors.New("Value is not numeric")
+	}
+
+	return nil
+}
+
+// IsURL makes sure a value is a valid URL
+func IsURL(val interface{}) error {
+	_, err := url.ParseRequestURI(val.(string))
+
+	if err != nil {
+		return errors.New("Value is invalid URL")
 	}
 
 	return nil
