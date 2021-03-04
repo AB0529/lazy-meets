@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AB0529/prompter"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/firefox"
 
@@ -57,7 +57,7 @@ func NewSchedule(schedulePath string) *Schedule {
 	if _, err := os.Stat(schedulePath); os.IsNotExist(err) {
 		files, _ := ioutil.ReadDir("./Schedules")
 		schedulePath := fmt.Sprintf("./Schedules/schedule_%d.yml", len(files)+1)
-		Info("Creating Shedule" + prompter.Green.Sprint(" #"+fmt.Sprint(len(files)+1)))
+		Info("Creating Shedule" + Green.Sprint(" #"+fmt.Sprint(len(files)+1)))
 
 		sc := ScheduleQuestions()
 		scFileData, _ := yaml.Marshal(&sc)
@@ -78,18 +78,18 @@ func Init() {
 	currentSched := SelectSchedule(false)
 	Sched = NewSchedule("./Schedules/" + currentSched)
 	ClearScreen()
-	fmt.Println("You have a total of " + prompter.Green.Sprint(len((*Sched))) + " classes")
+	fmt.Println("You have a total of " + Green.Sprint(len((*Sched))) + " classes")
 	for _, c := range *Sched {
 		// This is awful, but it works
 		wds := make([]string, len(c.Weekdays))
 		for _, w := range c.Weekdays {
-			wds = append(wds, prompter.Yellow.Sprint(w.String()))
+			wds = append(wds, Yellow.Sprint(w.String()))
 		}
-		fmt.Printf("- %s at %s (%s)\n", prompter.Red.Sprint(c.Name), prompter.Cyan.Sprint(strings.Split(c.JoinTime.Format("2006-01-02 3:4pm"), " ")[1]), strings.TrimSpace(strings.Join(wds, " ")))
+		fmt.Printf("- %s at %s (%s)\n", Red.Sprint(c.Name), Cyan.Sprint(strings.Split(c.JoinTime.Format("2006-01-02 3:4pm"), " ")[1]), strings.TrimSpace(strings.Join(wds, " ")))
 	}
 
 	fmt.Println()
-	Info("Using schedule " + prompter.Green.Sprint(currentSched))
+	Info("Using schedule " + Green.Sprint(currentSched))
 
 	// Ask iniital question
 	choice := InitalQuestions()
@@ -103,21 +103,23 @@ func Init() {
 		break
 	// ----------------------------------------
 	// Handle deleting a class
-	case prompter.Red.Sprint("Delete Class"):
+	case Red.Sprint("Delete Class"):
 		ClearScreen()
-		q := []interface{}{
-			&prompter.Multiselect{
-				Name:    "classToDel",
-				Message: "Which class do you want to delete?",
-				Options: GetAllClassNames(Sched),
+		q := []*survey.Question{
+			{
+				Name: "classToDel",
+				Prompt: &survey.Select{
+					Message: "Which class do you want to delete?",
+					Options: GetAllClassNames(Sched),
+				},
 			},
 		}
-		a := struct{ ClassToDel string }{}
+		var a string
 		l := len((*Sched))
-		prompter.Ask(&prompter.Prompt{Types: q}, &a)
+		survey.Ask(q, &a, survey.WithValidator(survey.Required))
 
 		for i, class := range *Sched {
-			if class.Name == a.ClassToDel {
+			if class.Name == a {
 				copy((*Sched)[i:], (*Sched)[i:])
 				(*Sched)[l-1] = &Class{}
 				(*Sched) = (*Sched)[:l-1]
@@ -139,20 +141,22 @@ func Init() {
 		break
 	// ----------------------------------------
 	// Handle editing a class
-	case prompter.Cyan.Sprint("Edit Class"):
+	case Cyan.Sprint("Edit Class"):
 		ClearScreen()
-		q := []interface{}{
-			&prompter.Multiselect{
-				Name:    "classToEdit",
-				Message: "Which class do you want to delete?",
-				Options: GetAllClassNames(Sched),
+		q := []*survey.Question{
+			{
+				Name: "classToEdit",
+				Prompt: &survey.Select{
+					Message: "Which class do you want to edit?",
+					Options: GetAllClassNames(Sched),
+				},
 			},
 		}
-		a := struct{ ClassToEdit string }{}
-		prompter.Ask(&prompter.Prompt{Types: q}, &a)
+		var a string
+		survey.Ask(q, &a, survey.WithValidator(survey.Required))
 
 		for i, class := range *Sched {
-			if class.Name == a.ClassToEdit {
+			if class.Name == a {
 				(*Sched)[i] = ClassQuestions()
 				break
 			}
@@ -164,7 +168,7 @@ func Init() {
 		break
 	// ----------------------------------------
 	// Handle adding a new class
-	case prompter.Green.Sprint("Add Class"):
+	case Green.Sprint("Add Class"):
 		ClearScreen()
 		newClass := ClassQuestions()
 		(*Sched) = append((*Sched), newClass)
@@ -175,7 +179,7 @@ func Init() {
 		break
 	// ----------------------------------------
 	// Handle starting program
-	case prompter.Purple.Sprint("Start Program"):
+	case Purple.Sprint("Start Program"):
 		StartProgram()
 		break
 	// ----------------------------------------
@@ -227,7 +231,7 @@ func contains(s []*time.Weekday, e time.Weekday) bool {
 
 // StartMeet will start the Google Meet
 func StartMeet(class *Class, config *Config) {
-	Info("Joining " + prompter.Yellow.Sprint(class.Name))
+	Info("Joining " + Yellow.Sprint(class.Name))
 
 	// Setup Seleniuim
 	selenium.SetDebug(false)
@@ -327,7 +331,7 @@ func StartMeet(class *Class, config *Config) {
 			// If the current url has "&born&hs" we know it ended
 			if strings.Contains(curURL, "&born&hs") {
 				config.Leave = oldLeaveCondition
-				Info(prompter.Red.Sprint("Ended ") + "breakout room")
+				Info(Red.Sprint("Ended ") + "breakout room")
 				time.Sleep(time.Minute * 1)
 				continue
 			}
@@ -336,7 +340,7 @@ func StartMeet(class *Class, config *Config) {
 			if strings.Contains(curURL, "&born=Breakout") {
 				// Ignore leave condition until breakout room has ended
 				config.Leave = -1
-				Info(prompter.Green.Sprint("Started ") + "breakout room")
+				Info(Green.Sprint("Started ") + "breakout room")
 				time.Sleep(time.Second * 2)
 				continue
 			}
@@ -356,7 +360,7 @@ func StartMeet(class *Class, config *Config) {
         _, rmErr := wd.FindElement(selenium.ByXPATH, "//div[contains(text(), \"You've been removed from the meeting\")]")
         if rmErr == nil {
             // End the meet if been removed
-            Info("Removed, leaving class " + prompter.Yellow.Sprint(class.Name))
+            Info("Removed, leaving class " + Yellow.Sprint(class.Name))
             break
         }
 		// Number of people in call
@@ -381,12 +385,12 @@ func StartMeet(class *Class, config *Config) {
 		num, _ := strconv.Atoi(numReg.FindString(numStr))
 
 		if num != prevNum {
-			Info("There are " + prompter.Yellow.Sprint(num) + " people in the call")
+			Info("There are " + Yellow.Sprint(num) + " people in the call")
 			prevNum = num
 		}
 
 		if config.Leave > num {
-			Info("Leaving class " + prompter.Yellow.Sprint(class.Name))
+			Info("Leaving class " + Yellow.Sprint(class.Name))
 			break
 		}
 
@@ -439,7 +443,7 @@ func StartProgram() {
 			continue
 		}
 
-		fmt.Printf("- %s at %s\n", prompter.Red.Sprint(class.Name), prompter.Cyan.Sprint(strings.Split(class.JoinTime.Format("2006-01-02 3:4pm"), " ")[1]))
+		fmt.Printf("- %s at %s\n", Red.Sprint(class.Name), Cyan.Sprint(strings.Split(class.JoinTime.Format("2006-01-02 3:4pm"), " ")[1]))
 	}
 
 	// Main loop

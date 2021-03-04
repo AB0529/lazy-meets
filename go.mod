@@ -4,8 +4,6 @@ go 1.15
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.2.8
-	github.com/BurntSushi/xgb v0.0.0-20201008132610-5f9e7b3c49cd // indirect
-	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gookit/color v1.3.6
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
