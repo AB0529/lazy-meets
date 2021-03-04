@@ -385,9 +385,9 @@ func Update() {
 				Error("error writing cache file")
 				os.Exit(1)
 			}
+			time.Sleep(2*time.Second)
+			os.Exit(1)
 		}
-		time.Sleep(2*time.Second)
-		os.Exit(1)
 	}
 
 	Info("Version " + prompter.Green.Sprint(resp.TagName) + " is up to date!")
