@@ -388,6 +388,9 @@ func Update() {
 			time.Sleep(2*time.Second)
 			os.Exit(1)
 		}
+
+		Info("Version " + prompter.Red.Sprint(resp.TagName) + " is out of date!")
+		return
 	}
 
 	Info("Version " + prompter.Green.Sprint(resp.TagName) + " is up to date!")
