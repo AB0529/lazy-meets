@@ -21,7 +21,7 @@ jobs:
       run:
         cd src && go get
         
-    - name: Build
+    - name: Releases
       run: go build -v -o lazy-meets ./src
 
     - name: Test

@@ -2,7 +2,9 @@
 config.*
 Schedules
 .DS_Store
+.idea
 Vendors
 Releases
 lazy-meets*
 old*
+/src/.update_cache

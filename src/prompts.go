@@ -39,6 +39,21 @@ func Error(msg ...interface{}) {
 // ------------------- Prompts ---------------------
 // ------------------------------------------------------
 
+// UpdateQuestion asks whether user wants to update or not
+func UpdateQuestion() bool {
+	updateQuestion := []interface{}{
+		&prompter.Boolean{
+			Name:       "update",
+			Message:    "Update found, would you like to update?",
+			Validators: []prompter.Validator{prompter.Required},
+		},
+	}
+	answers := struct { Update bool }{}
+	prompter.Ask(&prompter.Prompt{Types: updateQuestion}, &answers)
+
+	return answers.Update
+}
+
 // ConfigQuestions the questions to be asked when creating a new config file
 func ConfigQuestions() *Config {
 	configQuestions := []interface{}{

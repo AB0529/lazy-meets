@@ -4,8 +4,11 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
+	"github.com/inconshreveable/go-update"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,6 +16,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/AB0529/prompter"
 )
@@ -25,13 +29,13 @@ var (
 
 	// Vendors path to the Vendors dir
 	Vendors = "./Vendors"
-	// Geckodriver Path to Geckodrivers
+	// Geckodriver Path to Gecko drivers
 	Geckodriver = ""
 	// Firefox Path to Firefox
 	Firefox = ""
 )
 
-// IsDirEmpty determins if a directory is empty
+// IsDirEmpty determines if a directory is empty
 func IsDirEmpty(name string) (bool, error) {
 	f, err := os.Open(name)
 	if err != nil {
@@ -82,26 +86,26 @@ func Unzip(src string, dest string) error {
 	for _, f := range r.File {
 
 		// Store filename/path for returning and using later on
-		fpath := filepath.Join(dest, f.Name)
+		filePath := filepath.Join(dest, f.Name)
 
-		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return fmt.Errorf("%s: illegal file path", fpath)
+		if !strings.HasPrefix(filePath, filepath.Clean(dest)+string(os.PathSeparator)) {
+			return fmt.Errorf("%s: illegal file path", filePath)
 		}
 
-		filenames = append(filenames, fpath)
+		filenames = append(filenames, filePath)
 
 		if f.FileInfo().IsDir() {
 			// Make Folder
-			os.MkdirAll(fpath, os.ModePerm)
+			os.MkdirAll(filePath, os.ModePerm)
 			continue
 		}
 
 		// Make File
-		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+		if err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 			return err
 		}
 
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		outFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {
 			return err
 		}
@@ -135,7 +139,6 @@ func Untar(src string, dest string) error {
 
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
-		fmt.Println("A")
 		return err
 	}
 	defer gzr.Close()
@@ -164,7 +167,6 @@ func Untar(src string, dest string) error {
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
 				if err := os.MkdirAll(target, 0755); err != nil {
-					fmt.Println("A")
 					return err
 				}
 			}
@@ -172,12 +174,10 @@ func Untar(src string, dest string) error {
 		case tar.TypeReg:
 			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
-				fmt.Println("AA")
 				return err
 			}
 
 			if _, err := io.Copy(f, tr); err != nil {
-				fmt.Println("AAA")
 				return err
 			}
 
@@ -189,13 +189,13 @@ func Untar(src string, dest string) error {
 // DownloadAndUnzip will download a file and extract a zip
 func DownloadAndUnzip(urlStr string, archiveStr string, dest string) {
 	// Download the file
-	url, err := url.ParseRequestURI(urlStr)
+	requestURL, err := url.ParseRequestURI(urlStr)
 	if err != nil {
 		Error("Invalid URL!")
 		os.Exit(1)
 	}
 
-	if err = DownloadFile(archiveStr, url); err != nil {
+	if err = DownloadFile(archiveStr, requestURL); err != nil {
 		Error("Error while downloading")
 		os.Exit(1)
 	}
@@ -210,13 +210,13 @@ func DownloadAndUnzip(urlStr string, archiveStr string, dest string) {
 // DownloadAndUntar will download a file and extract a tarball
 func DownloadAndUntar(urlStr string, archiveStr string, dest string) {
 	// Download the file
-	url, err := url.ParseRequestURI(urlStr)
+	requestURL, err := url.ParseRequestURI(urlStr)
 	if err != nil {
 		Error("Invalid URL!")
 		os.Exit(1)
 	}
 
-	if err = DownloadFile(archiveStr, url); err != nil {
+	if err = DownloadFile(archiveStr, requestURL); err != nil {
 		Error("Error while downloading ", err)
 		os.Exit(1)
 	}
@@ -228,7 +228,54 @@ func DownloadAndUntar(urlStr string, archiveStr string, dest string) {
 	}
 }
 
-// Update will download latest Geckodrivers and Firefox
+// FindNewBinary will perform a GET request to find the latest binary url
+func FindNewBinary() (GHResp, error) {
+	var resp GHResp
+
+	r, err := http.Get("https://api.github.com/repos/AB0529/lazy-meets/releases/latest")
+	if err != nil {
+		return GHResp{}, err
+	}
+	defer r.Body.Close()
+
+	// Unmarshal the response to GHResp type
+	reader, err := ioutil.ReadAll(r.Body)
+	err = json.Unmarshal(reader, &resp)
+	if err != nil {
+		return GHResp{}, err
+	}
+
+	return resp, nil
+}
+
+// doUpdate performs the update from the url
+func doUpdate(resp GHResp) error {
+	// Find correct binary for platform
+	var githubURL string
+	for _, assets := range resp.Assets {
+		a := strings.Split(assets.Name, "-")
+		binaryPlatform := strings.Replace(a[len(a) - 1], ".exe", "", 1)
+
+		if binaryPlatform == runtime.GOOS {
+			githubURL = assets.BrowserDownloadURL
+			break
+		}
+	}
+
+	// Perform update with url
+	r, err := http.Get(githubURL)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	err = update.Apply(r.Body, update.Options{})
+
+	Info("Update applied")
+
+	return err
+}
+
+// Update will download latest Gecko drivers and Firefox and update from latest GitHub release
 func Update() {
 	// Make sure Vendors directory exists, if not create it
 	if _, err := os.Stat(Vendors); os.IsNotExist(err) {
@@ -240,7 +287,7 @@ func Update() {
 		panic(err)
 	}
 
-	// Download the Geckodrivers for the specific platform
+	// Download the Gecko drivers for the specific platform
 	switch runtime.GOOS {
 	case "windows":
 		if empty {
@@ -291,4 +338,57 @@ func Update() {
 		os.Exit(1)
 	}
 
+	// Update binary file
+	resp, err := FindNewBinary()
+	if err != nil {
+		panic(err)
+	}
+
+	// First time run
+	if _, err := os.Stat(".update_cache"); err != nil {
+		// Cache version number for first time run
+		err = os.WriteFile(".update_cache", []byte(resp.TagName), 0666)
+		if err != nil {
+			Error("error writing cache file")
+			os.Exit(1)
+		}
+
+		// Perform the update
+		err = doUpdate(resp)
+		if err != nil {
+			Error("error updating")
+			os.Exit(1)
+		}
+	}
+
+	// Check cache if version is the same or not
+	dat, err := ioutil.ReadFile(".update_cache")
+	if err != nil {
+		Error("error reading cache file")
+		os.Exit(1)
+	}
+
+	if string(dat) != resp.TagName {
+		// New update found
+		a := UpdateQuestion()
+		// User says yes to update
+		if a {
+			// Perform the update
+			err = doUpdate(resp)
+			if err != nil {
+				Error("error updating")
+				os.Exit(1)
+			}
+			// Update cache file
+			err = os.WriteFile(".update_cache", []byte(resp.TagName), 0666)
+			if err != nil {
+				Error("error writing cache file")
+				os.Exit(1)
+			}
+		}
+		time.Sleep(2*time.Second)
+		os.Exit(1)
+	}
+
+	Info("Version " + prompter.Green.Sprint(resp.TagName) + " is up to date!")
 }
