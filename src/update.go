@@ -270,7 +270,7 @@ func doUpdate(resp GHResp) error {
 	defer r.Body.Close()
 	err = update.Apply(r.Body, update.Options{})
 
-	Info("Update applied")
+	Info("Done, you are now on version " + prompter.Green.Sprint(resp.TagName) + " please restart program!")
 
 	return err
 }
