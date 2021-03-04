@@ -389,7 +389,7 @@ func Update() {
 			os.Exit(1)
 		}
 
-		Info("Version " + prompter.Red.Sprint(resp.TagName) + " is out of date!")
+		Info("Version " + prompter.Red.Sprint(string(dat)) + " is out of date!")
 		return
 	}
 
