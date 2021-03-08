@@ -92,10 +92,10 @@ func ConfigQuestions() *Config {
 	}
 
 	// Ask the question and create a config
-	var answers *Config
+	var answers Config
 	survey.Ask(configQuestions, &answers, survey.WithValidator(survey.Required))
 
-	return answers
+	return &answers
 }
 
 // ClassQuestions the questions to be asked when creating a new class
