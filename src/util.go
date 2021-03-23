@@ -296,7 +296,6 @@ func StartMeet(class *Class, config *Config) {
 		btn, err = wd.FindElement(selenium.ByXPATH, "//span[contains(text(), 'Ask')]")
 		if err != nil {
 			Error("Could not join meet")
-			wd.Quit()
 			return
 		}
 	}
@@ -437,7 +436,11 @@ func StartProgram() {
 
 	weekday := time.Now().Weekday()
 
-	// Make sure there's a calss for the weekday and the time is right
+	// Print current time
+	loc, _ := time.LoadLocation("America/New_York")
+	fmt.Printf("[ %s ] is the current time\n", Purple.Sprintf("%d:%d", time.Now().In(loc).Hour(), time.Now().In(loc).Minute()))
+
+	// Make sure there's a class for the weekday and the time is right
 	for _, class := range *Sched {
 		if !contains(class.Weekdays, weekday) {
 			continue
@@ -448,7 +451,7 @@ func StartProgram() {
 
 	// Main loop
 	for {
-		now := time.Now()
+		now := time.Now().In(loc)
 		CheckSchedule(
 			time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, now.Location()),
 			config, Sched)
