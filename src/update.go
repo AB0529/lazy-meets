@@ -297,6 +297,7 @@ func Update() {
 		_, err := os.Stat("C:\\Program Files\\Mozilla Firefox\\Firefox.exe")
 		if err != nil {
 			Error(Yellow.Sprint("Firefox not found ") + "make sure your Firefox installation is located at " + Red.Sprint("C:\\Program Files\\Mozilla Firefox\\Firefox.exe"))
+			time.Sleep(time.Second * 10)
 			os.Exit(1)
 		}
 		Firefox = "C:\\Program Files\\Mozilla Firefox\\Firefox.exe"
